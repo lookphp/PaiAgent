@@ -1,4 +1,3 @@
-import { Button } from 'antd';
 import { BugOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import NodePalette from './components/NodePalette';
 import FlowCanvas from './components/FlowCanvas';
@@ -15,6 +14,12 @@ function App() {
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  const toolbarExtraButtons = (
+    <>
+      <BugOutlined /> 调试
+    </>
+  );
+
   return (
     <div className="app-container">
       {/* 左侧节点面板 */}
@@ -24,30 +29,12 @@ function App() {
 
       {/* 中间画布区域 */}
       <div className="main-content">
-        <FlowCanvas />
-      </div>
-
-      {/* 右侧调试按钮 */}
-      <div
-        style={{
-          position: 'absolute',
-          right: 20,
-          top: 20,
-          zIndex: 1000,
-          display: 'flex',
-          gap: 8,
-        }}
-      >
-        <Button
-          type={debugDrawerOpen ? 'primary' : 'default'}
-          icon={<BugOutlined />}
-          onClick={() => setDebugDrawerOpen(!debugDrawerOpen)}
-        >
-          调试
-        </Button>
-        <Button icon={<FolderOpenOutlined />}>
-          加载
-        </Button>
+        <FlowCanvas
+          debugButton={{
+            type: debugDrawerOpen ? 'primary' : 'default',
+            onClick: () => setDebugDrawerOpen(!debugDrawerOpen)
+          }}
+        />
       </div>
 
       {/* 调试抽屉 */}

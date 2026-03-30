@@ -17,6 +17,8 @@ import {
   SaveOutlined,
   PlayCircleOutlined,
   DeleteOutlined,
+  BugOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons';
 
 import InputNode from '../../nodes/InputNode';
@@ -25,6 +27,13 @@ import ToolNode from '../../nodes/ToolNode';
 import OutputNode from '../../nodes/OutputNode';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
+
+interface FlowCanvasProps {
+  debugButton?: {
+    type: 'primary' | 'default';
+    onClick: () => void;
+  };
+}
 
 const nodeTypes: NodeTypes = {
   input: InputNode,
@@ -114,7 +123,7 @@ const FlowCanvasContent: React.FC = () => {
   }, []);
 
   return (
-    <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
+    <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -133,6 +142,7 @@ const FlowCanvasContent: React.FC = () => {
         onNodesDelete={() => {
           message.success('节点已删除');
         }}
+        style={{ background: '#f5f5f5' }}
       >
         <Controls />
         <MiniMap
@@ -150,6 +160,7 @@ const FlowCanvasContent: React.FC = () => {
             if (n.type === 'output') return '#e6f7ff';
             return '#fff';
           }}
+          style={{ margin: 10 }}
         />
         <Background variant={BackgroundVariant.Dots} gap={15} size={1} />
       </ReactFlow>
@@ -157,7 +168,7 @@ const FlowCanvasContent: React.FC = () => {
   );
 };
 
-const FlowCanvas: React.FC = () => {
+const FlowCanvas: React.FC<FlowCanvasProps> = ({ debugButton }) => {
   const { nodes, edges, setNodes, setEdges, currentWorkflow, setCurrentWorkflow, setDebugDrawerOpen } = useWorkflowStore();
 
   const handleSave = async () => {
@@ -210,6 +221,7 @@ const FlowCanvas: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           backgroundColor: '#fff',
+          flexShrink: 0,
         }}
       >
         <div style={{ fontSize: 16, fontWeight: 600 }}>流程画布</div>
@@ -225,6 +237,16 @@ const FlowCanvas: React.FC = () => {
             运行
           </Button>
           <Button
+            type={debugButton?.type}
+            icon={<BugOutlined />}
+            onClick={debugButton?.onClick}
+          >
+            调试
+          </Button>
+          <Button icon={<FolderOpenOutlined />}>
+            加载
+          </Button>
+          <Button
             danger
             icon={<DeleteOutlined />}
             onClick={handleClear}
@@ -234,7 +256,7 @@ const FlowCanvas: React.FC = () => {
         </Space>
       </div>
       {/* 画布区域 */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         <ReactFlowProvider>
           <FlowCanvasContent />
         </ReactFlowProvider>
