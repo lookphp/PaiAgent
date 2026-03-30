@@ -1,0 +1,93 @@
+package com.paiagent.executor;
+
+import com.paiagent.dto.ExecutionRequest;
+import com.paiagent.dto.ExecutionResponse;
+import com.paiagent.dto.WorkflowDto;
+import com.paiagent.service.WorkflowService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 执行控制器
+ */
+@RestController
+@RequestMapping("/api/execution")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+public class ExecutionController {
+
+    private final WorkflowService workflowService;
+    private final WorkflowExecutor workflowExecutor;
+
+    /**
+     * 执行工作流
+     */
+    @PostMapping
+    public ResponseEntity<ExecutionResponse> execute(@RequestBody ExecutionRequest request) {
+        try {
+            // 获取工作流
+            WorkflowDto workflow = workflowService.findById(request.getWorkflowId());
+            if (workflow == null) {
+                return ResponseEntity.badRequest()
+                        .body(ExecutionResponse.error("工作流不存在"));
+            }
+
+            // 执行工作流
+            WorkflowExecutor.ExecutionResult result = workflowExecutor.executeWorkflow(
+                    workflow.getNodes(),
+                    workflow.getEdges(),
+                    request.getInput()
+            );
+
+            if (!result.isSuccess()) {
+                return ResponseEntity.badRequest()
+                        .body(ExecutionResponse.error(result.getError()));
+            }
+
+            return ResponseEntity.ok(ExecutionResponse.success(
+                    result.getOutput(),
+                    result.getAudioUrl(),
+                    result.getLogs()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ExecutionResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * 快速执行（用于调试，不需要保存工作流）
+     */
+    @PostMapping("/quick")
+    public ResponseEntity<ExecutionResponse> quickExecute(@RequestBody ExecutionRequest request) {
+        try {
+            String nodesJson = request.getParameters() != null ? (String) request.getParameters().get("nodes") : "[]";
+            String edgesJson = request.getParameters() != null ? (String) request.getParameters().get("edges") : "[]";
+
+            WorkflowExecutor.ExecutionResult result = workflowExecutor.executeWorkflow(
+                    nodesJson,
+                    edgesJson,
+                    request.getInput()
+            );
+
+            if (!result.isSuccess()) {
+                return ResponseEntity.badRequest()
+                        .body(ExecutionResponse.error(result.getError()));
+            }
+
+            return ResponseEntity.ok(ExecutionResponse.success(
+                    result.getOutput(),
+                    result.getAudioUrl(),
+                    result.getLogs()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(ExecutionResponse.error(e.getMessage()));
+        }
+    }
+}

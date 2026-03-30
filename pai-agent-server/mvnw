@@ -1,0 +1,14 @@
+#!/bin/sh
+# Maven Wrapper Script
+# This is a simplified wrapper for systems without Maven installed
+
+MAVEN_VERSION=3.9.5
+MAVEN_HOME="$HOME/.m2/wrapper/dists/apache-maven-${MAVEN_VERSION}"
+
+if [ ! -d "$MAVEN_HOME" ]; then
+    echo "Maven not found. Please install Maven first."
+    echo "Visit: https://maven.apache.org/download.cgi"
+    exit 1
+fi
+
+exec "$MAVEN_HOME/bin/mvn" "$@"
