@@ -17,7 +17,20 @@ function App() {
   };
 
   const handleNewWorkflow = () => {
-    setNodes([]);
+    setNodes([
+      {
+        id: 'input-default',
+        type: 'input',
+        position: { x: 100, y: 100 },
+        data: { label: '用户输入' },
+      },
+      {
+        id: 'output-default',
+        type: 'output',
+        position: { x: 100, y: 400 },
+        data: { label: '输出', outputFormat: 'audio' },
+      },
+    ]);
     setEdges([]);
     setCurrentWorkflow(null);
   };

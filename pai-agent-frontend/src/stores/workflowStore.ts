@@ -56,7 +56,22 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   // 初始状态
   workflows: [],
   currentWorkflow: null,
-  nodes: [],
+  nodes: [
+    // 默认的输入节点
+    {
+      id: 'input-default',
+      type: 'input',
+      position: { x: 100, y: 100 },
+      data: { label: '用户输入' },
+    },
+    // 默认的输出节点
+    {
+      id: 'output-default',
+      type: 'output',
+      position: { x: 100, y: 400 },
+      data: { label: '输出', outputFormat: 'audio' },
+    },
+  ] as Node[],
   edges: [],
   isExecuting: false,
   executionLogs: [],
