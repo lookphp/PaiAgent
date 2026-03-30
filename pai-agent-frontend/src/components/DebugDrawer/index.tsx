@@ -96,7 +96,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
         </span>
       }
       placement="right"
-      width={400}
+      size="large"
       open={debugDrawerOpen}
       onClose={() => setDebugDrawerOpen(false)}
       footer={null}

@@ -1,12 +1,12 @@
 import React, { memo } from 'react';
-import { Handle, Position, NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Card, Typography } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 const InputNode: React.FC<NodeProps> = (props) => {
-  const data: any = props.data;
+  const data = props.data as any;
   const selected = props.selected;
 
   return (

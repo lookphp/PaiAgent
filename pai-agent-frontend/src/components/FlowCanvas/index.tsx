@@ -5,11 +5,18 @@ import {
   Background,
   MiniMap,
   ReactFlowProvider,
+  addEdge,
+  useNodesState,
+  useEdgesState,
   type ReactFlowInstance,
   type Node,
   type Connection,
+  type NodeChange,
+  type EdgeChange,
   type NodeTypes,
   BackgroundVariant,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { message } from 'antd';
@@ -34,26 +41,32 @@ const nodeTypes: NodeTypes = {
 
 const FlowCanvas: React.FC<FlowCanvasProps> = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { nodes, edges, setNodes, setEdges, addNode, setSelectedNode, setConfigDrawerOpen } = useWorkflowStore();
-  const [rfInstance] = React.useState<ReactFlowInstance | null>(null);
+  const store = useWorkflowStore();
+  const [rfInstance, setRfInstance] = React.useState<ReactFlowInstance | null>(null);
+
+  const onInit = useCallback((instance: ReactFlowInstance) => {
+    setRfInstance(instance);
+  }, []);
 
   const onNodesChange = useCallback(
-    (changes: any[]) => {
-      setNodes(changes);
+    (changes: NodeChange[]) => {
+      const newNodes = applyNodeChanges(changes, store.nodes);
+      store.setNodes(newNodes);
     },
-    [setNodes]
+    [store.nodes, store.setNodes]
   );
 
   const onEdgesChange = useCallback(
-    (changes: any[]) => {
-      setEdges(changes);
+    (changes: EdgeChange[]) => {
+      const newEdges = applyEdgeChanges(changes, store.edges);
+      store.setEdges(newEdges);
     },
-    [setEdges]
+    [store.edges, store.setEdges]
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      addNode({
+      store.addEdge({
         id: params.source + '-' + params.target,
         ...params,
         type: 'smoothstep',
@@ -61,20 +74,20 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
         style: { stroke: '#1890ff', strokeWidth: 2 },
       } as any);
     },
-    [addNode]
+    [store.addEdge]
   );
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      setSelectedNode(node);
-      setConfigDrawerOpen(true);
+      store.setSelectedNode(node);
+      store.setConfigDrawerOpen(true);
     },
-    [setSelectedNode, setConfigDrawerOpen]
+    [store.setSelectedNode, store.setConfigDrawerOpen]
   );
 
   const onPaneClick = useCallback(() => {
-    setSelectedNode(null);
-  }, [setSelectedNode]);
+    store.setSelectedNode(null);
+  }, [store.setSelectedNode]);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -84,7 +97,10 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
       const modelType = event.dataTransfer.getData('modelType');
       if (!type) return;
 
-      if (!reactFlowWrapper.current || !rfInstance) return;
+      if (!reactFlowWrapper.current || !rfInstance) {
+        message.warning('画布未初始化，请稍后再试');
+        return;
+      }
 
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
       const position = rfInstance.screenToFlowPosition({
@@ -134,9 +150,9 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
         },
       };
 
-      addNode(newNode);
+      store.addNode(newNode);
     },
-    [rfInstance, addNode]
+    [rfInstance, store.addNode]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -147,8 +163,8 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
   return (
     <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={store.nodes}
+        edges={store.edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -156,14 +172,12 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
         onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onInit={onInit}
         nodeTypes={nodeTypes}
         fitView
         snapToGrid
         snapGrid={[15, 15]}
         deleteKeyCode={['Backspace', 'Delete']}
-        onNodesDelete={() => {
-          message.success('节点已删除');
-        }}
         style={{ background: '#f5f5f5' }}
       >
         <Controls />
