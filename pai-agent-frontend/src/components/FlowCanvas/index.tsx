@@ -12,27 +12,17 @@ import {
   BackgroundVariant,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Button, Space, message } from 'antd';
-import {
-  SaveOutlined,
-  PlayCircleOutlined,
-  DeleteOutlined,
-  BugOutlined,
-  FolderOpenOutlined,
-} from '@ant-design/icons';
+import { message } from 'antd';
 
 import InputNode from '../../nodes/InputNode';
 import LLMNode from '../../nodes/LLMNode';
 import ToolNode from '../../nodes/ToolNode';
 import OutputNode from '../../nodes/OutputNode';
 import { useWorkflowStore } from '../../stores/workflowStore';
-import { workflowApi } from '../../services/workflowApi';
 
 interface FlowCanvasProps {
-  debugButton?: {
-    type: 'primary' | 'default';
-    onClick: () => void;
-  };
+  onSaveWorkflow: () => void;
+  onRunWorkflow: () => void;
 }
 
 const nodeTypes: NodeTypes = {
@@ -42,7 +32,7 @@ const nodeTypes: NodeTypes = {
   output: OutputNode,
 };
 
-const FlowCanvasContent: React.FC = () => {
+const FlowCanvas: React.FC<FlowCanvasProps> = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { nodes, edges, setNodes, setEdges, addNode, setSelectedNode, setConfigDrawerOpen } = useWorkflowStore();
   const [rfInstance] = React.useState<ReactFlowInstance | null>(null);
@@ -91,6 +81,7 @@ const FlowCanvasContent: React.FC = () => {
       event.preventDefault();
 
       const type = event.dataTransfer.getData('application/reactflow');
+      const modelType = event.dataTransfer.getData('modelType');
       if (!type) return;
 
       if (!reactFlowWrapper.current || !rfInstance) return;
@@ -101,14 +92,45 @@ const FlowCanvasContent: React.FC = () => {
         y: event.clientY - bounds.top,
       });
 
+      // 根据 modelType 确定节点标签和图标
+      let label = type === 'input' ? '用户输入' : type === 'output' ? '输出' : '节点';
+      let iconColor = '';
+
+      if (modelType) {
+        switch (modelType) {
+          case 'deepseek-chat':
+            label = 'DeepSeek';
+            iconColor = '#eb4d4d';
+            break;
+          case 'qwen-max':
+          case 'qwen-plus':
+            label = '通义千问';
+            iconColor = '#faad14';
+            break;
+          case 'ai-ping':
+            label = 'AI Ping';
+            iconColor = '#f5222d';
+            break;
+          case 'zhipu-chat':
+            label = '智谱';
+            iconColor = '#722ed1';
+            break;
+          case 'audio-synthesis':
+            label = '超拟人音频合成';
+            iconColor = '#fa8c16';
+            break;
+        }
+      }
+
       const newNode: Node = {
         id: `${type}-${Date.now()}`,
         type,
         position,
         data: {
-          label: type === 'llm' ? '通义千问' : type === 'tool' ? '超拟人音频合成' : type === 'input' ? '用户输入' : '输出',
-          model: type === 'llm' ? 'qwen-max' : undefined,
-          toolType: type === 'tool' ? 'audio-synthesis' : undefined,
+          label,
+          model: type === 'llm' ? modelType : undefined,
+          toolType: type === 'tool' ? modelType : undefined,
+          iconColor,
         },
       };
 
@@ -164,103 +186,6 @@ const FlowCanvasContent: React.FC = () => {
         />
         <Background variant={BackgroundVariant.Dots} gap={15} size={1} />
       </ReactFlow>
-    </div>
-  );
-};
-
-const FlowCanvas: React.FC<FlowCanvasProps> = ({ debugButton }) => {
-  const { nodes, edges, setNodes, setEdges, currentWorkflow, setCurrentWorkflow, setDebugDrawerOpen } = useWorkflowStore();
-
-  const handleSave = async () => {
-    try {
-      const workflowData = {
-        name: currentWorkflow?.name || `工作流_${new Date().getTime()}`,
-        description: currentWorkflow?.description || '',
-        nodes: JSON.stringify(nodes),
-        edges: JSON.stringify(edges),
-        config: '{}',
-      };
-
-      if (currentWorkflow?.id) {
-        await workflowApi.update(String(currentWorkflow.id), workflowData as any);
-        message.success('工作流已更新');
-      } else {
-        const saved = await workflowApi.create(workflowData as any);
-        setCurrentWorkflow({ ...saved, nodes, edges } as any);
-        message.success('工作流已创建');
-      }
-    } catch (error: any) {
-      message.error('保存失败：' + (error.message || '未知错误'));
-    }
-  };
-
-  const handleRun = () => {
-    if (nodes.length === 0) {
-      message.warning('请先添加节点');
-      return;
-    }
-    // 打开调试抽屉，让用户输入测试文本
-    setDebugDrawerOpen(true);
-    message.info('请在调试面板中输入测试文本');
-  };
-
-  const handleClear = () => {
-    setNodes([]);
-    setEdges([]);
-    message.success('画布已清空');
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* 工具栏 */}
-      <div
-        style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid #f0f0f0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: '#fff',
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ fontSize: 16, fontWeight: 600 }}>流程画布</div>
-        <Space>
-          <Button icon={<SaveOutlined />} onClick={handleSave}>
-            保存
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlayCircleOutlined />}
-            onClick={handleRun}
-          >
-            运行
-          </Button>
-          <Button
-            type={debugButton?.type}
-            icon={<BugOutlined />}
-            onClick={debugButton?.onClick}
-          >
-            调试
-          </Button>
-          <Button icon={<FolderOpenOutlined />}>
-            加载
-          </Button>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={handleClear}
-          >
-            清空
-          </Button>
-        </Space>
-      </div>
-      {/* 画布区域 */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-        <ReactFlowProvider>
-          <FlowCanvasContent />
-        </ReactFlowProvider>
-      </div>
     </div>
   );
 };
