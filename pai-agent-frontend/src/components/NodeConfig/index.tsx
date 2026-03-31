@@ -569,6 +569,7 @@ const NodeConfigPanel: React.FC = () => {
                         alignItems: 'flex-start',
                         width: '100%',
                       }}
+                      key={item.id}
                     >
                       {/* 序号 */}
                       <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
@@ -576,23 +577,24 @@ const NodeConfigPanel: React.FC = () => {
                       </div>
 
                       {/* 变量名 */}
-                      <div style={{ flex: 1 }}>
+                      <Form.Item style={{ flex: 1, marginBottom: 0 }}>
                         <Input
                           placeholder="变量名"
                           value={item.variableName}
                           onChange={(e) => handleUpdateOutputParamConfig(item.id, 'variableName', e.target.value)}
                           size="small"
-                          addonBefore="变量名"
+                          onClick={(e) => e.stopPropagation()}
                         />
-                      </div>
+                      </Form.Item>
 
                       {/* 变量类型 */}
-                      <div style={{ width: 120 }}>
+                      <Form.Item style={{ width: 100, marginBottom: 0 }}>
                         <Select
                           value={item.variableType}
                           onChange={(value) => handleUpdateOutputParamConfig(item.id, 'variableType', value)}
                           size="small"
                           style={{ width: '100%' }}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <Select.Option value="String">String</Select.Option>
                           <Select.Option value="Number">Number</Select.Option>
@@ -600,18 +602,18 @@ const NodeConfigPanel: React.FC = () => {
                           <Select.Option value="Object">Object</Select.Option>
                           <Select.Option value="Array">Array</Select.Option>
                         </Select>
-                      </div>
+                      </Form.Item>
 
                       {/* 描述 */}
-                      <div style={{ flex: 2 }}>
+                      <Form.Item style={{ flex: 2, marginBottom: 0 }}>
                         <Input
-                          placeholder="参数描述（可选）"
+                          placeholder="描述（可选）"
                           value={item.description}
                           onChange={(e) => handleUpdateOutputParamConfig(item.id, 'description', e.target.value)}
                           size="small"
-                          addonBefore="描述"
+                          onClick={(e) => e.stopPropagation()}
                         />
-                      </div>
+                      </Form.Item>
 
                       {/* 删除按钮 */}
                       <Button
