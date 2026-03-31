@@ -38,23 +38,35 @@ public class LLMProviderServiceImpl implements LLMProviderService {
     public String invoke(String model, String systemPrompt, String userPrompt) {
         log.info("调用 LLM 服务：model={}, systemPrompt={}", model, userPrompt);
 
-        // 根据 model 选择对应的 API 服务
+        // 根据 model 选择对应的 API 服务，使用配置文件中的配置
         if (model != null && model.toLowerCase().contains("deepseek")) {
-            return callDeepSeekApi(model, systemPrompt, userPrompt);
+            return callDeepSeekApi(model, systemPrompt, userPrompt, deepseekApiUrl, deepseekApiKey);
         } else if (model != null && model.toLowerCase().contains("qwen")) {
-            return callQwenApi(model, systemPrompt, userPrompt);
+            return callQwenApi(model, systemPrompt, userPrompt, qwenApiUrl, qwenApiKey);
         } else {
-            return callQwenApi(model, systemPrompt, userPrompt);
+            return callQwenApi(model, systemPrompt, userPrompt, qwenApiUrl, qwenApiKey);
+        }
+    }
+
+    @Override
+    public String invoke(String model, String systemPrompt, String userPrompt, String apiUrl, String apiKey) {
+        log.info("调用 LLM 服务（自定义配置）: model={}, url={}", model, apiUrl);
+
+        // 根据 model 选择 API，使用传入的配置
+        if (model != null && model.toLowerCase().contains("deepseek")) {
+            return callDeepSeekApi(model, systemPrompt, userPrompt, apiUrl, apiKey);
+        } else {
+            return callQwenApi(model, systemPrompt, userPrompt, apiUrl, apiKey);
         }
     }
 
     /**
      * 调用通义千问 API
      */
-    private String callQwenApi(String model, String systemPrompt, String userPrompt) {
-        log.info("调用通义千问 API: model={}, url={}", model, qwenApiUrl);
+    private String callQwenApi(String model, String systemPrompt, String userPrompt, String apiUrl, String apiKey) {
+        log.info("调用通义千问 API: model={}, url={}", model, apiUrl);
 
-        if (qwenApiKey == null || qwenApiKey.isEmpty()) {
+        if (apiKey == null || apiKey.isEmpty()) {
             throw new RuntimeException("通义千问 API Key 未配置");
         }
 
@@ -83,7 +95,7 @@ public class LLMProviderServiceImpl implements LLMProviderService {
 
             // 发送请求
             ResponseEntity<String> response = restTemplate.exchange(
-                qwenApiUrl,
+                apiUrl,
                 HttpMethod.POST,
                 entity,
                 String.class
@@ -107,10 +119,10 @@ public class LLMProviderServiceImpl implements LLMProviderService {
     /**
      * 调用 DeepSeek API
      */
-    private String callDeepSeekApi(String model, String systemPrompt, String userPrompt) {
-        log.info("调用 DeepSeek API: model={}, url={}", model, deepseekApiUrl);
+    private String callDeepSeekApi(String model, String systemPrompt, String userPrompt, String apiUrl, String apiKey) {
+        log.info("调用 DeepSeek API: model={}, url={}", model, apiUrl);
 
-        if (deepseekApiKey == null || deepseekApiKey.isEmpty()) {
+        if (apiKey == null || apiKey.isEmpty()) {
             throw new RuntimeException("DeepSeek API Key 未配置");
         }
 
@@ -139,7 +151,7 @@ public class LLMProviderServiceImpl implements LLMProviderService {
 
             // 发送请求
             ResponseEntity<String> response = restTemplate.exchange(
-                deepseekApiUrl,
+                apiUrl,
                 HttpMethod.POST,
                 entity,
                 String.class
