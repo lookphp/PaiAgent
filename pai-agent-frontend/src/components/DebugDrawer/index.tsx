@@ -173,6 +173,47 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
             />
           </div>
         )}
+
+        {executionResult?.success && executionResult?.output && (
+          <div>
+            <Title level={5}>执行结果</Title>
+            <div
+              style={{
+                padding: 12,
+                border: '1px solid #e8e8e8',
+                borderRadius: 6,
+                backgroundColor: '#f6ffed',
+                fontFamily: 'monospace',
+                fontSize: 13,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {executionResult.output}
+            </div>
+          </div>
+        )}
+
+        {executionResult?.error && (
+          <div>
+            <Title level={5} style={{ color: '#ff4d4f' }}>错误信息</Title>
+            <div
+              style={{
+                padding: 12,
+                border: '1px solid #ffccc7',
+                borderRadius: 6,
+                backgroundColor: '#fff2f0',
+                color: '#ff4d4f',
+                fontFamily: 'monospace',
+                fontSize: 13,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {executionResult.error}
+            </div>
+          </div>
+        )}
       </div>
     </Drawer>
   );
