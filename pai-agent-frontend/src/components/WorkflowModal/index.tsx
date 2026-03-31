@@ -291,32 +291,37 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
         )}
       </div>
 
-      {filteredWorkflows.length === 0 ? (
-        <div style={{ padding: '40px 0', textAlign: 'center' }}>
-          <Empty
-            description={
-              workflows.length === 0
-                ? '暂无工作流，点击"新建"创建一个'
-                : searchText
-                ? '未找到匹配的工作流'
-                : '暂无工作流'
-            }
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        </div>
-      ) : (
-        <Table
-          columns={columns}
-          dataSource={filteredWorkflows}
-          loading={loading}
-          pagination={{
-            pageSize: 5,
-            showSizeChanger: false,
-            showTotal: (total) => `共 ${total} 个工作流`,
-          }}
-          scroll={{ y: 400 }}
-          size="middle"
-        />
+      {/* 保存模式下不显示列表，只显示输入框 */}
+      {mode === 'load' && (
+        <>
+          {filteredWorkflows.length === 0 ? (
+            <div style={{ padding: '40px 0', textAlign: 'center' }}>
+              <Empty
+                description={
+                  workflows.length === 0
+                    ? '暂无工作流，点击"新建"创建一个'
+                    : searchText
+                    ? '未找到匹配的工作流'
+                    : '暂无工作流'
+                }
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            </div>
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={filteredWorkflows}
+              loading={loading}
+              pagination={{
+                pageSize: 5,
+                showSizeChanger: false,
+                showTotal: (total) => `共 ${total} 个工作流`,
+              }}
+              scroll={{ y: 400 }}
+              size="middle"
+            />
+          )}
+        </>
       )}
     </Modal>
   );
