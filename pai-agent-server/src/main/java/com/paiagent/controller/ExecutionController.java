@@ -1,10 +1,14 @@
-package com.paiagent.executor;
+package com.paiagent.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paiagent.dto.ExecutionRequest;
 import com.paiagent.dto.ExecutionResponse;
 import com.paiagent.dto.WorkflowDto;
+import com.paiagent.executor.WorkflowExecutor;
 import com.paiagent.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +17,7 @@ import java.util.List;
 /**
  * 执行控制器
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/execution")
 @RequiredArgsConstructor
@@ -21,6 +26,7 @@ public class ExecutionController {
 
     private final WorkflowService workflowService;
     private final WorkflowExecutor workflowExecutor;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 执行工作流
@@ -37,8 +43,8 @@ public class ExecutionController {
 
             // 执行工作流
             WorkflowExecutor.ExecutionResult result = workflowExecutor.executeWorkflow(
-                    workflow.getNodes(),
-                    workflow.getEdges(),
+                    objectMapper.writeValueAsString(workflow.getNodes()),
+                    objectMapper.writeValueAsString(workflow.getEdges()),
                     request.getInput()
             );
 
@@ -53,6 +59,10 @@ public class ExecutionController {
                     result.getLogs()
             ));
 
+        } catch (JsonProcessingException e) {
+            log.error("JSON 处理失败", e);
+            return ResponseEntity.internalServerError()
+                    .body(ExecutionResponse.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(ExecutionResponse.error(e.getMessage()));

@@ -53,8 +53,21 @@ public class WorkflowService {
                 .map(workflow -> {
                     workflow.setName(dto.getName());
                     workflow.setDescription(dto.getDescription());
-                    workflow.setNodes(dto.getNodes());
-                    workflow.setEdges(dto.getEdges());
+                    // 将 Object 类型转换为 String 存储
+                    try {
+                        if (dto.getNodes() instanceof String) {
+                            workflow.setNodes((String) dto.getNodes());
+                        } else {
+                            workflow.setNodes(objectMapper.writeValueAsString(dto.getNodes()));
+                        }
+                        if (dto.getEdges() instanceof String) {
+                            workflow.setEdges((String) dto.getEdges());
+                        } else {
+                            workflow.setEdges(objectMapper.writeValueAsString(dto.getEdges()));
+                        }
+                    } catch (JsonProcessingException e) {
+                        log.error("JSON 处理错误：", e);
+                    }
                     workflow.setConfig(dto.getConfig());
                     Workflow saved = workflowRepository.save(workflow);
                     return toDto(saved);
@@ -72,8 +85,17 @@ public class WorkflowService {
         dto.setId(workflow.getId());
         dto.setName(workflow.getName());
         dto.setDescription(workflow.getDescription());
-        dto.setNodes(workflow.getNodes());
-        dto.setEdges(workflow.getEdges());
+
+        // 将 JSON 字符串解析为 Object 返回给前端
+        try {
+            dto.setNodes(objectMapper.readValue(workflow.getNodes(), Object.class));
+            dto.setEdges(objectMapper.readValue(workflow.getEdges(), Object.class));
+        } catch (JsonProcessingException e) {
+            log.warn("解析工作流节点或边失败，使用空数组", e);
+            dto.setNodes("[]");
+            dto.setEdges("[]");
+        }
+
         dto.setConfig(workflow.getConfig());
         dto.setCreatedAt(workflow.getCreatedAt());
         dto.setUpdatedAt(workflow.getUpdatedAt());
@@ -88,20 +110,24 @@ public class WorkflowService {
 
         // 将 JSON 数组转换为字符串存储
         try {
-            // 处理 nodes
-            if (dto.getNodesObject() != null) {
-                workflow.setNodes(objectMapper.writeValueAsString(dto.getNodesObject()));
-            } else if (dto.getNodes() != null && !dto.getNodes().isEmpty()) {
-                workflow.setNodes(dto.getNodes());
+            // 处理 nodes - 接收 Object 类型，序列化为 JSON 字符串
+            if (dto.getNodes() != null) {
+                if (dto.getNodes() instanceof String) {
+                    workflow.setNodes((String) dto.getNodes());
+                } else {
+                    workflow.setNodes(objectMapper.writeValueAsString(dto.getNodes()));
+                }
             } else {
                 workflow.setNodes("[]");
             }
 
             // 处理 edges
-            if (dto.getEdgesObject() != null) {
-                workflow.setEdges(objectMapper.writeValueAsString(dto.getEdgesObject()));
-            } else if (dto.getEdges() != null && !dto.getEdges().isEmpty()) {
-                workflow.setEdges(dto.getEdges());
+            if (dto.getEdges() != null) {
+                if (dto.getEdges() instanceof String) {
+                    workflow.setEdges((String) dto.getEdges());
+                } else {
+                    workflow.setEdges(objectMapper.writeValueAsString(dto.getEdges()));
+                }
             } else {
                 workflow.setEdges("[]");
             }

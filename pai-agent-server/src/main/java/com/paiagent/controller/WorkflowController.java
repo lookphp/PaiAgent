@@ -33,12 +33,12 @@ public class WorkflowController {
         return ResponseEntity.ok(dto);
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<WorkflowDto> create(@RequestBody WorkflowDto dto) {
         return ResponseEntity.ok(workflowService.create(dto));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
     public ResponseEntity<WorkflowDto> update(
             @PathVariable Long id,
             @RequestBody WorkflowDto dto) {
