@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Table, Button, Space, Tag, Input, Empty, message } from 'antd';
+import { Modal, Table, Button, Space, Tag, Input, Empty, message, Popconfirm } from 'antd';
 import {
   FolderOpenOutlined,
   EditOutlined,
@@ -7,6 +7,7 @@ import {
   EyeOutlined,
   SearchOutlined,
   ClockCircleOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Workflow } from '../../types/workflow';
@@ -96,6 +97,31 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
     }
   };
 
+  // 删除确认
+  const confirmDelete = (record: WorkflowTableItem) => {
+    return new Promise<void>((resolve) => {
+      Modal.confirm({
+        title: '确认删除',
+        icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+        content: (
+          <div>
+            <p>确定要删除工作流 <strong>{record.name}</strong> 吗？</p>
+            <p style={{ color: '#999', fontSize: 13, marginTop: 8 }}>
+              此操作不可恢复，该工作流包含 {record.nodeCount} 个节点和 {record.edgeCount} 条连接。
+            </p>
+          </div>
+        ),
+        okText: '确认删除',
+        cancelText: '取消',
+        okButtonProps: { danger: true },
+        onOk: () => {
+          handleDelete(Number(record.id), record.name);
+          resolve();
+        },
+      });
+    });
+  };
+
   // 处理保存
   const handleSave = () => {
     if (!newWorkflowName.trim()) {
@@ -158,7 +184,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
     {
       title: '操作',
       key: 'action',
-      width: 100,
+      width: 150,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
@@ -173,14 +199,34 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
               加载
             </Button>
           )}
-          <Button
-            type="link"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(Number(record.id), record.name)}
-            style={{ padding: 0 }}
-          />
+          <Popconfirm
+            title="确认删除"
+            description={
+              <div>
+                <p style={{ marginBottom: 8 }}>
+                  确定要删除 <strong>{record.name}</strong> 吗？
+                </p>
+                <p style={{ color: '#999', fontSize: 12 }}>
+                  包含 {record.nodeCount} 个节点，{record.edgeCount} 条连接
+                </p>
+              </div>
+            }
+            okText="确认删除"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            icon={<ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />}
+            onConfirm={() => handleDelete(Number(record.id), record.name)}
+          >
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              style={{ padding: 0 }}
+            >
+              删除
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
