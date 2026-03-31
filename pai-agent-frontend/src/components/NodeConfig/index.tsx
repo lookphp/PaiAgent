@@ -473,6 +473,97 @@ const NodeConfigPanel: React.FC = () => {
                 </Text>
               </div>
 
+              {/* 输出参数配置 */}
+              <Divider style={{ margin: '16px 0' }} />
+
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <Text strong>输出参数配置</Text>
+                  <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddOutputParamConfig}>
+                    添加输出参数
+                  </Button>
+                </div>
+
+                {outputParamConfigs.length === 0 && (
+                  <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                    暂无输出参数，请点击"添加输出参数"按钮添加
+                  </div>
+                )}
+
+                {outputParamConfigs.map((item, index) => (
+                  <Space
+                    key={item.id}
+                    size="small"
+                    style={{
+                      marginBottom: 8,
+                      padding: '8px',
+                      background: '#fafafa',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                      alignItems: 'flex-start',
+                      width: '100%',
+                    }}
+                  >
+                    {/* 序号 */}
+                    <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
+                      {index + 1}
+                    </div>
+
+                    {/* 变量名 */}
+                    <Form.Item style={{ flex: 1, marginBottom: 0 }}>
+                      <Input
+                        placeholder="变量名"
+                        value={item.variableName}
+                        onChange={(e) => handleUpdateOutputParamConfig(item.id, 'variableName', e.target.value)}
+                        size="small"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </Form.Item>
+
+                    {/* 变量类型 */}
+                    <Form.Item style={{ width: 100, marginBottom: 0 }}>
+                      <Select
+                        value={item.variableType}
+                        onChange={(value) => handleUpdateOutputParamConfig(item.id, 'variableType', value)}
+                        size="small"
+                        style={{ width: '100%' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Select.Option value="String">String</Select.Option>
+                        <Select.Option value="Number">Number</Select.Option>
+                        <Select.Option value="Boolean">Boolean</Select.Option>
+                        <Select.Option value="Object">Object</Select.Option>
+                        <Select.Option value="Array">Array</Select.Option>
+                      </Select>
+                    </Form.Item>
+
+                    {/* 描述 */}
+                    <Form.Item style={{ flex: 2, marginBottom: 0 }}>
+                      <Input
+                        placeholder="描述（可选）"
+                        value={item.description}
+                        onChange={(e) => handleUpdateOutputParamConfig(item.id, 'description', e.target.value)}
+                        size="small"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </Form.Item>
+
+                    {/* 删除按钮 */}
+                    <Button
+                      type="text"
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleRemoveOutputParamConfig(item.id)}
+                    />
+                  </Space>
+                ))}
+
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                  💡 提示：输出参数将作为 LLM 节点的回答结果，可供后续节点引用
+                </Text>
+              </div>
+
               <Divider style={{ margin: '16px 0' }} />
 
               <div style={{ marginBottom: 16 }}>
@@ -538,98 +629,6 @@ const NodeConfigPanel: React.FC = () => {
                     </Text>
                   </div>
                 )}
-
-                {/* 输出参数配置 */}
-                <Divider style={{ margin: '16px 0' }} />
-
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <Text strong>输出参数配置</Text>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddOutputParamConfig}>
-                      添加输出参数
-                    </Button>
-                  </div>
-
-                  {outputParamConfigs.length === 0 && (
-                    <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
-                      暂无输出参数，请点击"添加输出参数"按钮添加
-                    </div>
-                  )}
-
-                  {outputParamConfigs.map((item, index) => (
-                    <Space
-                      key={item.id}
-                      size="small"
-                      style={{
-                        marginBottom: 8,
-                        padding: '8px',
-                        background: '#fafafa',
-                        borderRadius: 6,
-                        border: '1px solid #e5e7eb',
-                        alignItems: 'flex-start',
-                        width: '100%',
-                      }}
-                      key={item.id}
-                    >
-                      {/* 序号 */}
-                      <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
-                        {index + 1}
-                      </div>
-
-                      {/* 变量名 */}
-                      <Form.Item style={{ flex: 1, marginBottom: 0 }}>
-                        <Input
-                          placeholder="变量名"
-                          value={item.variableName}
-                          onChange={(e) => handleUpdateOutputParamConfig(item.id, 'variableName', e.target.value)}
-                          size="small"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </Form.Item>
-
-                      {/* 变量类型 */}
-                      <Form.Item style={{ width: 100, marginBottom: 0 }}>
-                        <Select
-                          value={item.variableType}
-                          onChange={(value) => handleUpdateOutputParamConfig(item.id, 'variableType', value)}
-                          size="small"
-                          style={{ width: '100%' }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Select.Option value="String">String</Select.Option>
-                          <Select.Option value="Number">Number</Select.Option>
-                          <Select.Option value="Boolean">Boolean</Select.Option>
-                          <Select.Option value="Object">Object</Select.Option>
-                          <Select.Option value="Array">Array</Select.Option>
-                        </Select>
-                      </Form.Item>
-
-                      {/* 描述 */}
-                      <Form.Item style={{ flex: 2, marginBottom: 0 }}>
-                        <Input
-                          placeholder="描述（可选）"
-                          value={item.description}
-                          onChange={(e) => handleUpdateOutputParamConfig(item.id, 'description', e.target.value)}
-                          size="small"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </Form.Item>
-
-                      {/* 删除按钮 */}
-                      <Button
-                        type="text"
-                        danger
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        onClick={() => handleRemoveOutputParamConfig(item.id)}
-                      />
-                    </Space>
-                  ))}
-
-                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                    💡 提示：输出参数将作为 LLM 节点的回答结果，可供后续节点引用
-                  </Text>
-                </div>
               </div>
             </>
           )}
