@@ -47,6 +47,9 @@ const NodeConfigPanel: React.FC = () => {
       form.setFieldsValue({
         label: selectedNode.data?.label,
         model: selectedNode.data?.model,
+        apiUrl: selectedNode.data?.apiUrl,
+        apiKey: selectedNode.data?.apiKey,
+        temperature: selectedNode.data?.temperature !== undefined ? selectedNode.data?.temperature : 0.7,
         prompt: selectedNode.data?.prompt,
         toolType: selectedNode.data?.toolType,
         voice: selectedNode.data?.voice,
@@ -247,27 +250,87 @@ const NodeConfigPanel: React.FC = () => {
           {/* 大模型节点配置 */}
           {selectedNode.type === 'llm' && (
             <>
-              <Form.Item
-                label="模型选择"
-                name="model"
-                rules={[{ required: true, message: '请选择模型' }]}
-              >
-                <Select>
-                  <Select.Option value="qwen-max">通义千问-Max</Select.Option>
-                  <Select.Option value="qwen-plus">通义千问-Plus</Select.Option>
-                  <Select.Option value="deepseek-chat">DeepSeek Chat</Select.Option>
-                  <Select.Option value="deepseek-coder">DeepSeek Coder</Select.Option>
-                  <Select.Option value="ai-ping">AI Ping</Select.Option>
-                  <Select.Option value="zhipu-chat">智谱 AI</Select.Option>
-                </Select>
-              </Form.Item>
+              <Divider style={{ margin: '16px 0' }} />
 
-              <Form.Item label="系统提示词" name="prompt">
-                <TextArea
-                  rows={4}
-                  placeholder="请输入系统提示词，用于设定 AI 角色..."
-                />
-              </Form.Item>
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+                  基础配置
+                </Text>
+
+                {/* 接口地址 */}
+                <Form.Item
+                  label="接口地址"
+                  name="apiUrl"
+                  rules={[{ required: true, message: '请输入接口地址' }]}
+                >
+                  <Input placeholder="例如：https://api.deepseek.com/v1/chat/completions" />
+                </Form.Item>
+
+                {/* API 密钥 */}
+                <Form.Item
+                  label="API 密钥"
+                  name="apiKey"
+                  rules={[{ required: true, message: '请输入 API 密钥' }]}
+                >
+                  <Input.Password placeholder="请输入 API 密钥" />
+                </Form.Item>
+
+                {/* 模型选择 */}
+                <Form.Item
+                  label="模型名称"
+                  name="model"
+                  rules={[{ required: true, message: '请选择或输入模型名称' }]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    placeholder="选择或输入模型名称"
+                  >
+                    <Select.Option value="qwen-max">通义千问-Max</Select.Option>
+                    <Select.Option value="qwen-plus">通义千问-Plus</Select.Option>
+                    <Select.Option value="qwen-turbo">通义千问-Turbo</Select.Option>
+                    <Select.Option value="deepseek-chat">DeepSeek Chat</Select.Option>
+                    <Select.Option value="deepseek-coder">DeepSeek Coder</Select.Option>
+                    <Select.Option value="ai-ping">AI Ping</Select.Option>
+                    <Select.Option value="zhipu-chat">智谱 AI</Select.Option>
+                  </Select>
+                </Form.Item>
+
+                {/* 温度参数 */}
+                <Form.Item
+                  label="温度 (Temperature)"
+                  name="temperature"
+                  initialValue={0.7}
+                  rules={[{ required: true, message: '请设置温度值' }]}
+                  extra="控制输出随机性，范围 0-2，值越大输出越多样"
+                >
+                  <Select>
+                    <Select.Option value={0}>0 - 确定性最高</Select.Option>
+                    <Select.Option value={0.3}>0.3 - 较低随机性</Select.Option>
+                    <Select.Option value={0.5}>0.5 - 适中</Select.Option>
+                    <Select.Option value={0.7}>0.7 - 默认推荐</Select.Option>
+                    <Select.Option value={1}>1 - 较高随机性</Select.Option>
+                    <Select.Option value={1.5}>1.5 - 高随机性</Select.Option>
+                    <Select.Option value={2}>2 - 完全随机</Select.Option>
+                  </Select>
+                </Form.Item>
+              </div>
+
+              <Divider style={{ margin: '16px 0' }} />
+
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+                  提示词配置
+                </Text>
+
+                {/* 系统提示词 */}
+                <Form.Item label="系统提示词" name="prompt">
+                  <TextArea
+                    rows={4}
+                    placeholder="请输入系统提示词，用于设定 AI 角色..."
+                  />
+                </Form.Item>
+              </div>
             </>
           )}
 

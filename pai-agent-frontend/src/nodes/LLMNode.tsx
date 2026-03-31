@@ -18,7 +18,12 @@ const LLMNode: React.FC<NodeProps> = (props) => {
       <div className="node-content">
         <Text strong>{data?.label || '大模型'}</Text>
         {data?.model && (
-          <Tag className="node-tag">{data.model}</Tag>
+          <Tag className="node-tag" style={{ marginTop: 4 }}>{data.model}</Tag>
+        )}
+        {data?.temperature && (
+          <Tag className="node-tag" color="orange" style={{ marginTop: 4 }}>
+            T={data.temperature}
+          </Tag>
         )}
         {data?.prompt && (
           <Text
@@ -28,6 +33,8 @@ const LLMNode: React.FC<NodeProps> = (props) => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              marginTop: 4,
+              display: 'block',
             }}
           >
             {data.prompt.substring(0, 30)}{data.prompt.length > 30 ? '...' : ''}
