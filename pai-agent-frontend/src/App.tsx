@@ -107,8 +107,8 @@ function App() {
         const updatedData: any = {
           name: currentWorkflow.name,
           description: currentWorkflow.description,
-          nodes: JSON.stringify(nodes),
-          edges: JSON.stringify(edges),
+          nodes: JSON.stringify(nodes || []),
+          edges: JSON.stringify(edges || []),
         };
         await workflowApi.update(String(currentWorkflow.id), updatedData);
 
@@ -118,12 +118,14 @@ function App() {
           edges,
           updatedAt: new Date().toISOString(),
         });
+        alert('工作流已更新！');
       } else {
         // 创建新工作流
         const newWorkflow = await workflowApi.create({
           name,
-          nodes: JSON.stringify(nodes),
-          edges: JSON.stringify(edges),
+          description: workflow.description || '',
+          nodes: JSON.stringify(nodes || []),
+          edges: JSON.stringify(edges || []),
         } as any);
 
         const parsedNodes = typeof newWorkflow.nodes === 'string' ? JSON.parse(newWorkflow.nodes) : newWorkflow.nodes;
@@ -136,9 +138,11 @@ function App() {
         });
 
         window.history.pushState({}, '', `?workflow=${newWorkflow.id}`);
+        alert(`工作流已创建！ID: ${newWorkflow.id}`);
       }
     } catch (error) {
       console.error('保存工作流失败:', error);
+      alert('保存工作流失败：' + (error as any).message);
     }
   };
 
