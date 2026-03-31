@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Table, Button, Space, Tag, Input, Empty, message, Popconfirm } from 'antd';
+import { Modal, Table, Button, Space, Tag, Input, Empty, message, Popconfirm, Typography } from 'antd';
 import {
   FolderOpenOutlined,
   EditOutlined,
@@ -13,6 +13,8 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import type { Workflow } from '../../types/workflow';
 import { workflowApi } from '../../services/workflowApi';
+
+const { Text } = Typography;
 
 interface WorkflowModalProps {
   open: boolean;
@@ -111,7 +113,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
   // 处理删除工作流
   const handleDelete = async (id: number, name: string) => {
     try {
-      await workflowApi.delete(id);
+      await workflowApi.delete(String(id));
       message.success(`已删除：${name}`);
       loadWorkflows();
     } catch (error) {
@@ -183,7 +185,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
         </span>
       ),
       ellipsis: true,
-      maxWidth: 250,
+      width: 250,
     },
     {
       title: '节点/连接',
@@ -270,7 +272,6 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
         </div>
       }
       open={open}
-      onClose={onClose}
       onCancel={onClose}
       width={800}
       footer={
@@ -334,7 +335,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
               <div>
                 <Text type="secondary" style={{ fontSize: 12 }}>工作流类型</Text>
                 <div style={{ fontSize: 14, fontWeight: 500 }}>
-                  {currentWorkflow ? '更新现有' : '创建新的'}
+                  {currentWorkflowName ? '更新现有' : '创建新的'}
                 </div>
               </div>
             </Space>
