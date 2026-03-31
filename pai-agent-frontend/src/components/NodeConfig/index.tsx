@@ -10,6 +10,7 @@ const NodeConfigPanel: React.FC = () => {
   const [form] = Form.useForm();
   const { selectedNode, setConfigDrawerOpen, updateNode, setSelectedNode, nodes, edges } = useWorkflowStore();
   const [outputConfigs, setOutputConfigs] = useState<any[]>([]);
+  const [inputConfigs, setInputConfigs] = useState<any[]>([]);
   const [contentTemplate, setContentTemplate] = useState<string>('');
 
   // 获取可用的引用节点（除当前 LLM 节点外的所有节点）
@@ -43,6 +44,26 @@ const NodeConfigPanel: React.FC = () => {
     );
   };
 
+  // 添加输入配置行
+  const handleAddInputConfig = () => {
+    setInputConfigs([
+      ...inputConfigs,
+      { id: Date.now(), paramName: '', paramType: 'input', inputValue: '', referenceNode: '' },
+    ]);
+  };
+
+  // 删除输入配置行
+  const handleRemoveInputConfig = (id: number) => {
+    setInputConfigs(inputConfigs.filter((item) => item.id !== id));
+  };
+
+  // 更新输入配置行
+  const handleUpdateInputConfig = (id: number, field: string, value: string) => {
+    setInputConfigs(
+      inputConfigs.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
   React.useEffect(() => {
     if (selectedNode) {
       form.setFieldsValue({
@@ -70,9 +91,14 @@ const NodeConfigPanel: React.FC = () => {
       if (data.contentTemplate) {
         setContentTemplate(data.contentTemplate);
       }
+      // 加载输入配置
+      if (data.inputConfigs) {
+        setInputConfigs(data.inputConfigs);
+      }
     } else {
       form.resetFields();
       setOutputConfigs([]);
+      setInputConfigs([]);
       setContentTemplate('');
     }
   }, [selectedNode, form]);
@@ -85,6 +111,10 @@ const NodeConfigPanel: React.FC = () => {
         if (selectedNode.type === 'output') {
           updatedData.outputConfigs = outputConfigs;
           updatedData.contentTemplate = contentTemplate;
+        }
+        // 保存输入配置（LLM 节点）
+        if (selectedNode.type === 'llm') {
+          updatedData.inputConfigs = inputConfigs;
         }
         updateNode(selectedNode.id, updatedData);
         setSelectedNode(null);
@@ -317,27 +347,103 @@ const NodeConfigPanel: React.FC = () => {
                     <Select.Option value={2}>2 - 完全随机</Select.Option>
                   </Select>
                 </Form.Item>
+              </div>
 
-                {/* 输入变量引用 */}
-                <Form.Item
-                  label="输入变量"
-                  name="inputVariable"
-                  rules={[{ required: true, message: '请选择输入变量' }]}
-                  extra="选择要传递给模型的输入数据来源"
-                >
-                  <Select
-                    showSearch
-                    placeholder="选择输入节点"
+              <Divider style={{ margin: '16px 0' }} />
+
+              {/* 输入参数配置 */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <Text strong>输入参数配置</Text>
+                  <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddInputConfig}>
+                    添加参数
+                  </Button>
+                </div>
+
+                {inputConfigs.length === 0 && (
+                  <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                    暂无输入参数，请点击"添加参数"按钮添加
+                  </div>
+                )}
+
+                {inputConfigs.map((item, index) => (
+                  <Space
+                    key={item.id}
+                    size="small"
+                    style={{
+                      marginBottom: 8,
+                      padding: '8px',
+                      background: '#fafafa',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                      alignItems: 'flex-start',
+                    }}
                   >
-                    {getAvailableNodes()
-                      .filter((node) => node.type === 'input')
-                      .map((node) => (
-                        <Select.Option key={node.id} value={node.id}>
-                          {node.label} ({node.data?.variableName || 'user_input'})
-                        </Select.Option>
-                      ))}
-                  </Select>
-                </Form.Item>
+                    {/* 序号 */}
+                    <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
+                      {index + 1}
+                    </div>
+
+                    {/* 参数名输入框 */}
+                    <Input
+                      placeholder="参数名"
+                      value={item.paramName}
+                      onChange={(e) => handleUpdateInputConfig(item.id, 'paramName', e.target.value)}
+                      style={{ width: 100 }}
+                      size="small"
+                    />
+
+                    {/* 参数类型 */}
+                    <Select
+                      value={item.paramType}
+                      onChange={(value) => handleUpdateInputConfig(item.id, 'paramType', value)}
+                      style={{ width: 80 }}
+                      size="small"
+                    >
+                      <Select.Option value="input">直接输入</Select.Option>
+                      <Select.Option value="reference">引用节点</Select.Option>
+                    </Select>
+
+                    {/* 输入或引用 */}
+                    {item.paramType === 'input' ? (
+                      <Input
+                        placeholder="请输入参数值"
+                        value={item.inputValue}
+                        onChange={(e) => handleUpdateInputConfig(item.id, 'inputValue', e.target.value)}
+                        style={{ width: 200, flex: 1 }}
+                        size="small"
+                      />
+                    ) : (
+                      <Select
+                        placeholder="选择引用节点"
+                        value={item.referenceNode || undefined}
+                        onChange={(value) => handleUpdateInputConfig(item.id, 'referenceNode', value)}
+                        style={{ width: 200, flex: 1 }}
+                        size="small"
+                      >
+                        {getAvailableNodes().map((node) => (
+                          <Select.Option key={node.id} value={node.id}>
+                            {node.label}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    )}
+
+                    {/* 删除按钮 */}
+                    <Button
+                      type="text"
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleRemoveInputConfig(item.id)}
+                      style={{ marginTop: 2 }}
+                    />
+                  </Space>
+                ))}
+
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                  💡 提示：参数名将在用户提示词中使用 {'{{'}参数名{'}}'} 的方式引用
+                </Text>
               </div>
 
               <Divider style={{ margin: '16px 0' }} />
@@ -363,38 +469,48 @@ const NodeConfigPanel: React.FC = () => {
                 <Form.Item
                   label="用户提示词模板"
                   name="userPrompt"
-                  extra="使用 {{input}} 引用输入变量，可以添加额外指令"
+                  extra="使用 {'{{'}参数名{'}}'} 引用上面定义的参数"
                 >
                   <TextArea
-                    rows={8}
-                    placeholder={`# 角色
-你是一位专业的广播节目编辑，负责制作一档名为"AI 电台"的节目...
-# 原始内容：{{input}}`}
+                    rows={6}
+                    placeholder={`# 任务&#10;将原始内容改编为适合播客节目的逐字稿&#10;&#10;# 原始内容：{{input}}`}
                   />
                 </Form.Item>
 
-                {/* 变量插入提示 */}
-                <div style={{ background: '#f5f7fa', padding: 12, borderRadius: 6, marginBottom: 16 }}>
-                  <Text strong style={{ display: 'block', marginBottom: 8 }}>
-                    💡 可用变量
-                  </Text>
-                  <Space wrap>
-                    <Tag color="blue" style={{ cursor: 'pointer' }} onClick={() => {
-                      const textarea = document.querySelector('textarea[aria-label="用户提示词模板"]') as HTMLTextAreaElement;
-                      if (textarea) {
-                        const startPos = textarea.selectionStart;
-                        const endPos = textarea.selectionEnd;
-                        const value = textarea.value;
-                        textarea.value = value.substring(0, startPos) + '{{input}}' + value.substring(endPos);
-                      }
-                    }}>
-                      {'{{input}}'} - 输入节点内容
-                    </Tag>
-                  </Space>
-                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                    点击变量标签可插入到上方提示词模板中
-                  </Text>
-                </div>
+                {/* 已定义的参数列表 */}
+                {inputConfigs.length > 0 && (
+                  <div style={{ background: '#f5f7fa', padding: 12, borderRadius: 6, marginBottom: 16 }}>
+                    <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                      💡 可用参数 (点击插入)
+                    </Text>
+                    <Space wrap>
+                      {inputConfigs.map((item) => (
+                        <Tag
+                          key={item.id}
+                          color="blue"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => {
+                            const textarea = document.querySelector('textarea[aria-label="用户提示词模板"]') as HTMLTextAreaElement;
+                            if (textarea) {
+                              const startPos = textarea.selectionStart;
+                              const endPos = textarea.selectionEnd;
+                              const value = textarea.value;
+                              const insertText = `{{${item.paramName || '未命名'}}}`;
+                              textarea.value = value.substring(0, startPos) + insertText + value.substring(endPos);
+                              // 触发 onChange 事件
+                              textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                            }
+                          }}
+                        >
+                          {`{{${item.paramName || '未命名'}}}`}
+                        </Tag>
+                      ))}
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                      点击参数标签可插入到上方提示词模板的光标位置
+                    </Text>
+                  </div>
+                )}
               </div>
             </>
           )}
