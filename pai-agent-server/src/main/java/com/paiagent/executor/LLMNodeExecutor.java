@@ -23,7 +23,11 @@ public class LLMNodeExecutor implements NodeExecutor {
         try {
             String model = (String) nodeConfig.getOrDefault("model", "qwen-max");
             String prompt = (String) nodeConfig.get("prompt");
-            String input = context.getStringVariable("input");
+            // 从上一个节点的输出获取输入（对于第一个处理节点，使用 ExecutionContext 的 input）
+            String input = context.getStringVariable("lastOutput");
+            if (input == null || input.isEmpty()) {
+                input = context.getInput();
+            }
 
             // 从节点配置中获取 API Key 和 API 地址（优先使用节点配置）
             String apiUrl = (String) nodeConfig.get("apiUrl");
