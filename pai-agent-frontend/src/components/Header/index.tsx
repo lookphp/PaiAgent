@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, Space, Dropdown, Avatar } from 'antd';
+import { Button, Input, Space, Dropdown, Avatar, Tag } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -8,6 +8,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   SearchOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
 
@@ -24,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
   onLoadWorkflow,
   onSaveWorkflow,
 }) => {
-  const { debugDrawerOpen, setDebugDrawerOpen } = useWorkflowStore();
+  const { debugDrawerOpen, setDebugDrawerOpen, currentWorkflow, nodes, edges } = useWorkflowStore();
 
   const userMenuItems = [
     {
@@ -36,11 +37,38 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <div className="app-header">
-      {/* 左侧：Logo + 搜索框 */}
+      {/* 左侧：Logo + 当前工作流信息 */}
       <div className="header-left">
         <div className="logo">
           <span className="logo-text">PaiAgent</span>
         </div>
+
+        {/* 当前工作流信息 */}
+        {currentWorkflow ? (
+          <div className="current-workflow-info">
+            <FileTextOutlined style={{ color: '#1890ff', marginRight: 6 }} />
+            <span className="workflow-name" title={currentWorkflow.name}>
+              {currentWorkflow.name}
+            </span>
+            <Tag color="blue" style={{ marginLeft: 8 }}>
+              {nodes.length} 节点
+            </Tag>
+            <Tag color="green">
+              {edges.length} 连接
+            </Tag>
+            {currentWorkflow.updatedAt && (
+              <span className="workflow-updated-time">
+                更新于 {new Date(currentWorkflow.updatedAt).toLocaleString('zh-CN')}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="new-workflow-hint">
+            <FileTextOutlined style={{ marginRight: 6 }} />
+            新建工作流
+          </span>
+        )}
+
         <Search
           placeholder="搜索工作流、节点..."
           allowClear

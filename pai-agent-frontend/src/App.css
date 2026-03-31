@@ -31,6 +31,40 @@
   gap: 16px;
 }
 
+/* 当前工作流信息样式 */
+.current-workflow-info {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.workflow-name {
+  font-weight: 500;
+  color: #333;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-updated-time {
+  color: #999;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.new-workflow-hint {
+  display: flex;
+  align-items: center;
+  color: #999;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
 .logo {
   display: flex;
   align-items: center;
