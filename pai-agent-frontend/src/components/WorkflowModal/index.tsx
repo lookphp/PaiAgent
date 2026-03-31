@@ -44,12 +44,25 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
     setLoading(true);
     try {
       const list = await workflowApi.list();
-      const formattedList = list.map((w) => ({
-        ...w,
-        key: String(w.id),
-        nodeCount: Array.isArray(w.nodes) ? w.nodes.length : 0,
-        edgeCount: Array.isArray(w.edges) ? w.edges.length : 0,
-      }));
+      const formattedList = list.map((w) => {
+        // 解析 nodes 和 edges - 可能是 JSON 字符串或数组
+        let nodesArray: any[] = [];
+        let edgesArray: any[] = [];
+
+        if (w.nodes) {
+          nodesArray = typeof w.nodes === 'string' ? JSON.parse(w.nodes) : w.nodes;
+        }
+        if (w.edges) {
+          edgesArray = typeof w.edges === 'string' ? JSON.parse(w.edges) : w.edges;
+        }
+
+        return {
+          ...w,
+          key: String(w.id),
+          nodeCount: Array.isArray(nodesArray) ? nodesArray.length : 0,
+          edgeCount: Array.isArray(edgesArray) ? edgesArray.length : 0,
+        };
+      });
       setWorkflows(formattedList);
     } catch (error) {
       console.error('加载工作流列表失败:', error);
