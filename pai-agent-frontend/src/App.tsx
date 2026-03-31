@@ -188,6 +188,8 @@ function App() {
           workflowModalMode === 'load' ? handleModalLoadWorkflow : handleModalSaveWorkflow
         }
         currentWorkflowName={currentWorkflow?.name}
+        nodes={nodes}
+        edges={edges}
       />
     </div>
   );

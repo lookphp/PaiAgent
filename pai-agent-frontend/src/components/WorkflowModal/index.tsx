@@ -8,6 +8,7 @@ import {
   SearchOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Workflow } from '../../types/workflow';
@@ -19,6 +20,8 @@ interface WorkflowModalProps {
   onClose: () => void;
   onLoadWorkflow?: (workflow: Workflow) => void;
   currentWorkflowName?: string;
+  nodes?: any[];
+  edges?: any[];
 }
 
 interface WorkflowTableItem extends Workflow {
@@ -33,11 +36,14 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
   onClose,
   onLoadWorkflow,
   currentWorkflowName,
+  nodes = [],
+  edges = [],
 }) => {
   const [workflows, setWorkflows] = useState<WorkflowTableItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [newWorkflowName, setNewWorkflowName] = useState('');
+  const [newWorkflowDescription, setNewWorkflowDescription] = useState('');
 
   // 加载工作流列表
   const loadWorkflows = async () => {
@@ -77,8 +83,12 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
       loadWorkflows();
       if (mode === 'save' && currentWorkflowName) {
         setNewWorkflowName(currentWorkflowName);
-      } else {
+      } else if (mode === 'save') {
         setNewWorkflowName('');
+      }
+      // 保存模式下重置描述
+      if (mode === 'save') {
+        setNewWorkflowDescription('');
       }
     }
   }, [open, mode, currentWorkflowName]);
@@ -142,7 +152,13 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
       return;
     }
     if (onLoadWorkflow) {
-      onLoadWorkflow({ name: newWorkflowName } as Workflow);
+      // 返回完整的工作流数据，包括名称、描述、节点和边
+      onLoadWorkflow({
+        name: newWorkflowName,
+        description: newWorkflowDescription,
+        nodes,
+        edges,
+      } as Workflow);
       onClose();
     }
   };
@@ -268,30 +284,79 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
         ) : null
       }
     >
-      <div style={{ marginBottom: 16 }}>
-        {mode === 'save' ? (
-          <Input
-            placeholder="请输入工作流名称"
-            value={newWorkflowName}
-            onChange={(e) => setNewWorkflowName(e.target.value)}
-            onPressEnter={handleSave}
-            size="large"
-            prefix={<EditOutlined />}
-            style={{ maxWidth: 400 }}
-          />
-        ) : (
-          <Input
-            placeholder="搜索工作流名称或描述..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            size="large"
-            prefix={<SearchOutlined />}
-            allowClear
-          />
-        )}
-      </div>
+      {mode === 'save' ? (
+        // 保存模式：显示名称、描述和工作流统计
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            <Input
+              placeholder="请输入工作流名称"
+              value={newWorkflowName}
+              onChange={(e) => setNewWorkflowName(e.target.value)}
+              onPressEnter={handleSave}
+              size="large"
+              prefix={<EditOutlined />}
+            />
+          </div>
 
-      {/* 保存模式下不显示列表，只显示输入框 */}
+          <div style={{ marginBottom: 16 }}>
+            <Input.TextArea
+              placeholder="请输入工作流描述（可选）"
+              value={newWorkflowDescription}
+              onChange={(e) => setNewWorkflowDescription(e.target.value)}
+              rows={3}
+              size="large"
+              showCount
+              maxLength={200}
+            />
+          </div>
+
+          <div
+            style={{
+              background: '#f5f7fa',
+              padding: 16,
+              borderRadius: 8,
+              border: '1px solid #e5e7eb',
+            }}
+          >
+            <div style={{ fontWeight: 500, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <FileTextOutlined style={{ color: '#1890ff' }} />
+              工作流预览
+            </div>
+            <Space size="large" style={{ flexWrap: 'wrap' }}>
+              <div>
+                <Text type="secondary" style={{ fontSize: 12 }}>节点数量</Text>
+                <div style={{ fontSize: 20, fontWeight: 600, color: '#667eea' }}>{nodes.length}</div>
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 12 }}>连接数量</Text>
+                <div style={{ fontSize: 20, fontWeight: 600, color: '#52c41a' }}>{edges.length}</div>
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: 12 }}>工作流类型</Text>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>
+                  {currentWorkflow ? '更新现有' : '创建新的'}
+                </div>
+              </div>
+            </Space>
+          </div>
+
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 12 }}>
+            💡 提示：工作流将包含上述节点和连接配置，可在保存后随时修改
+          </Text>
+        </div>
+      ) : (
+        // 加载模式：显示搜索框
+        <Input
+          placeholder="搜索工作流名称或描述..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          size="large"
+          prefix={<SearchOutlined />}
+          allowClear
+        />
+      )}
+
+      {/* 加载模式：显示工作流列表 */}
       {mode === 'load' && (
         <>
           {filteredWorkflows.length === 0 ? (
@@ -324,7 +389,5 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
         </>
       )}
     </Modal>
-  );
-};
 
 export default WorkflowModal;
