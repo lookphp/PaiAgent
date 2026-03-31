@@ -13,7 +13,7 @@ interface WorkflowState {
 
   // 执行状态
   isExecuting: boolean;
-  executionLogs: string[];
+  executionLogs: { timestamp: string; message: string }[];
   executionResult: ExecutionResponse | null;
 
   // 调试抽屉状态
@@ -197,9 +197,12 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   // 执行状态管理
   setIsExecuting: (executing) => set({ isExecuting: executing }),
 
-  addExecutionLog: (log) => {
+  addExecutionLog: (message) => {
     set((state) => ({
-      executionLogs: [...state.executionLogs, log],
+      executionLogs: [...state.executionLogs, {
+        timestamp: new Date().toLocaleTimeString(),
+        message,
+      }],
     }));
   },
 

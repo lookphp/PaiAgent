@@ -150,8 +150,8 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
             ) : (
               executionLogs.map((log, index) => (
                 <div key={index} style={{ marginBottom: 4 }}>
-                  <Text code>{`[${new Date().toLocaleTimeString()}]`}</Text>{' '}
-                  {log}
+                  <Text code>{`[${log.timestamp}]`}</Text>{' '}
+                  {log.message}
                 </div>
               ))
             )}
