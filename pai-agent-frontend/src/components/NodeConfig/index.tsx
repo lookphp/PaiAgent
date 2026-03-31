@@ -11,6 +11,7 @@ const NodeConfigPanel: React.FC = () => {
   const { selectedNode, setConfigDrawerOpen, updateNode, setSelectedNode, nodes, edges } = useWorkflowStore();
   const [outputConfigs, setOutputConfigs] = useState<any[]>([]);
   const [inputConfigs, setInputConfigs] = useState<any[]>([]);
+  const [outputParamConfigs, setOutputParamConfigs] = useState<any[]>([]);
   const [contentTemplate, setContentTemplate] = useState<string>('');
 
   // 获取可用的引用节点（除当前 LLM 节点外的所有节点）
@@ -64,6 +65,26 @@ const NodeConfigPanel: React.FC = () => {
     );
   };
 
+  // 添加输出参数配置行
+  const handleAddOutputParamConfig = () => {
+    setOutputParamConfigs([
+      ...outputParamConfigs,
+      { id: Date.now(), variableName: '', variableType: 'String', description: '' },
+    ]);
+  };
+
+  // 删除输出参数配置行
+  const handleRemoveOutputParamConfig = (id: number) => {
+    setOutputParamConfigs(outputParamConfigs.filter((item) => item.id !== id));
+  };
+
+  // 更新输出参数配置行
+  const handleUpdateOutputParamConfig = (id: number, field: string, value: string) => {
+    setOutputParamConfigs(
+      outputParamConfigs.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
   React.useEffect(() => {
     if (selectedNode) {
       form.setFieldsValue({
@@ -95,10 +116,15 @@ const NodeConfigPanel: React.FC = () => {
       if (data.inputConfigs) {
         setInputConfigs(data.inputConfigs);
       }
+      // 加载输出参数配置
+      if (data.outputParamConfigs) {
+        setOutputParamConfigs(data.outputParamConfigs);
+      }
     } else {
       form.resetFields();
       setOutputConfigs([]);
       setInputConfigs([]);
+      setOutputParamConfigs([]);
       setContentTemplate('');
     }
   }, [selectedNode, form]);
@@ -112,9 +138,10 @@ const NodeConfigPanel: React.FC = () => {
           updatedData.outputConfigs = outputConfigs;
           updatedData.contentTemplate = contentTemplate;
         }
-        // 保存输入配置（LLM 节点）
+        // 保存输入配置和输出参数配置（LLM 节点）
         if (selectedNode.type === 'llm') {
           updatedData.inputConfigs = inputConfigs;
+          updatedData.outputParamConfigs = outputParamConfigs;
         }
         updateNode(selectedNode.id, updatedData);
         setSelectedNode(null);
@@ -511,6 +538,96 @@ const NodeConfigPanel: React.FC = () => {
                     </Text>
                   </div>
                 )}
+
+                {/* 输出参数配置 */}
+                <Divider style={{ margin: '16px 0' }} />
+
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <Text strong>输出参数配置</Text>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddOutputParamConfig}>
+                      添加输出参数
+                    </Button>
+                  </div>
+
+                  {outputParamConfigs.length === 0 && (
+                    <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                      暂无输出参数，请点击"添加输出参数"按钮添加
+                    </div>
+                  )}
+
+                  {outputParamConfigs.map((item, index) => (
+                    <Space
+                      key={item.id}
+                      size="small"
+                      style={{
+                        marginBottom: 8,
+                        padding: '8px',
+                        background: '#fafafa',
+                        borderRadius: 6,
+                        border: '1px solid #e5e7eb',
+                        alignItems: 'flex-start',
+                        width: '100%',
+                      }}
+                    >
+                      {/* 序号 */}
+                      <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
+                        {index + 1}
+                      </div>
+
+                      {/* 变量名 */}
+                      <div style={{ flex: 1 }}>
+                        <Input
+                          placeholder="变量名"
+                          value={item.variableName}
+                          onChange={(e) => handleUpdateOutputParamConfig(item.id, 'variableName', e.target.value)}
+                          size="small"
+                          addonBefore="变量名"
+                        />
+                      </div>
+
+                      {/* 变量类型 */}
+                      <div style={{ width: 120 }}>
+                        <Select
+                          value={item.variableType}
+                          onChange={(value) => handleUpdateOutputParamConfig(item.id, 'variableType', value)}
+                          size="small"
+                          style={{ width: '100%' }}
+                        >
+                          <Select.Option value="String">String</Select.Option>
+                          <Select.Option value="Number">Number</Select.Option>
+                          <Select.Option value="Boolean">Boolean</Select.Option>
+                          <Select.Option value="Object">Object</Select.Option>
+                          <Select.Option value="Array">Array</Select.Option>
+                        </Select>
+                      </div>
+
+                      {/* 描述 */}
+                      <div style={{ flex: 2 }}>
+                        <Input
+                          placeholder="参数描述（可选）"
+                          value={item.description}
+                          onChange={(e) => handleUpdateOutputParamConfig(item.id, 'description', e.target.value)}
+                          size="small"
+                          addonBefore="描述"
+                        />
+                      </div>
+
+                      {/* 删除按钮 */}
+                      <Button
+                        type="text"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleRemoveOutputParamConfig(item.id)}
+                      />
+                    </Space>
+                  ))}
+
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                    💡 提示：输出参数将作为 LLM 节点的回答结果，可供后续节点引用
+                  </Text>
+                </div>
               </div>
             </>
           )}
