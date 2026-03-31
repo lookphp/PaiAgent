@@ -139,3 +139,26 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* 工作流弹窗样式 */
+.workflow-modal .ant-modal-body {
+  padding: 16px;
+}
+
+.workflow-modal .ant-table {
+  font-size: 13px;
+}
+
+.workflow-modal .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 500;
+  color: #333;
+}
+
+.workflow-modal .ant-table-tbody > tr:hover > td {
+  background: #f5f7fa;
+}
+
+.workflow-modal .ant-empty {
+  margin: 20px 0;
+}

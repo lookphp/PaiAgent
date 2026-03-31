@@ -1,15 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import NodePalette from './components/NodePalette';
 import FlowCanvas from './components/FlowCanvas';
 import DebugDrawer from './components/DebugDrawer';
 import NodeConfigPanel from './components/NodeConfig';
 import Header from './components/Header';
+import WorkflowModal from './components/WorkflowModal';
 import { useWorkflowStore } from './stores/workflowStore';
 import { workflowApi } from './services/workflowApi';
+import type { Workflow } from './types/workflow';
 import './App.css';
 
 function App() {
-  const { nodes, edges, currentWorkflow, setCurrentWorkflow, setNodes, setEdges, workflows, setWorkflows } = useWorkflowStore();
+  const { nodes, edges, currentWorkflow, setCurrentWorkflow, setNodes, setEdges } = useWorkflowStore();
+  const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
+  const [workflowModalMode, setWorkflowModalMode] = useState<'load' | 'save'>('load');
 
   // 页面加载时从 URL 读取工作流 ID 并加载
   useEffect(() => {
@@ -62,51 +66,44 @@ function App() {
     window.history.pushState({}, '', window.location.pathname);
   };
 
-  const handleLoadWorkflow = async () => {
+  const handleLoadWorkflow = () => {
+    setWorkflowModalMode('load');
+    setWorkflowModalOpen(true);
+  };
+
+  const handleSaveWorkflow = () => {
+    setWorkflowModalMode('save');
+    setWorkflowModalOpen(true);
+  };
+
+  const handleModalLoadWorkflow = async (workflow: Workflow) => {
     try {
-      const list = await workflowApi.list();
-      setWorkflows(list);
-
-      // 显示选择对话框
-      const selectedId = window.prompt(
-        '请输入要加载的工作流 ID，或输入列表编号：\n' +
-        list.map((w, i) => `${i + 1}. ${w.name} (ID: ${w.id})`).join('\n')
-      );
-
-      if (!selectedId) return;
-
-      // 如果输入的是数字，选择对应编号的工作流
-      const index = parseInt(selectedId) - 1;
-      let workflowId: string;
-
-      if (index >= 0 && index < list.length) {
-        workflowId = String(list[index].id);
-      } else {
-        workflowId = selectedId;
+      if (workflow.id) {
+        // 加载现有工作流
+        const fullWorkflow = await workflowApi.get(String(workflow.id));
+        setCurrentWorkflow(fullWorkflow);
+        const parsedNodes = typeof fullWorkflow.nodes === 'string' ? JSON.parse(fullWorkflow.nodes) : fullWorkflow.nodes;
+        const parsedEdges = typeof fullWorkflow.edges === 'string' ? JSON.parse(fullWorkflow.edges) : fullWorkflow.edges;
+        setNodes(parsedNodes || []);
+        setEdges(parsedEdges || []);
+        window.history.pushState({}, '', `?workflow=${fullWorkflow.id}`);
       }
-
-      const workflow = await workflowApi.get(workflowId);
-      setCurrentWorkflow(workflow);
-      // 解析 JSON 字符串为数组
-      const parsedNodes = typeof workflow.nodes === 'string' ? JSON.parse(workflow.nodes) : workflow.nodes;
-      const parsedEdges = typeof workflow.edges === 'string' ? JSON.parse(workflow.edges) : workflow.edges;
-      setNodes(parsedNodes || []);
-      setEdges(parsedEdges || []);
-
-      // 更新 URL
-      window.history.pushState({}, '', `?workflow=${workflowId}`);
-
-      alert(`已加载工作流：${workflow.name}`);
     } catch (error) {
       console.error('加载工作流失败:', error);
-      alert('加载工作流失败，请重试');
     }
   };
 
-  const handleSaveWorkflow = async () => {
+  const handleSaveWorkflowClick = () => {
+    setWorkflowModalMode('save');
+    setWorkflowModalOpen(true);
+  };
+
+  const handleModalSaveWorkflow = async (workflow: Workflow) => {
     try {
+      const name = workflow.name || '未命名工作流';
+
       if (currentWorkflow) {
-        // 更新现有工作流 - 直接发送对象，让 nodes 和 edges 保持为数组
+        // 更新现有工作流
         const updatedData: any = {
           name: currentWorkflow.name,
           description: currentWorkflow.description,
@@ -115,41 +112,33 @@ function App() {
         };
         await workflowApi.update(String(currentWorkflow.id), updatedData);
 
-        // 更新本地状态
         setCurrentWorkflow({
           ...currentWorkflow,
           nodes,
           edges,
           updatedAt: new Date().toISOString(),
         });
-        alert('工作流已更新！');
       } else {
         // 创建新工作流
-        const name = window.prompt('请输入工作流名称：') || '未命名工作流';
         const newWorkflow = await workflowApi.create({
           name,
           nodes: JSON.stringify(nodes),
           edges: JSON.stringify(edges),
         } as any);
 
-        // 解析返回的 JSON 字符串为数组
         const parsedNodes = typeof newWorkflow.nodes === 'string' ? JSON.parse(newWorkflow.nodes) : newWorkflow.nodes;
         const parsedEdges = typeof newWorkflow.edges === 'string' ? JSON.parse(newWorkflow.edges) : newWorkflow.edges;
 
-        // 更新本地状态
         setCurrentWorkflow({
           ...newWorkflow,
           nodes: parsedNodes || [],
           edges: parsedEdges || [],
         });
 
-        // 更新 URL
         window.history.pushState({}, '', `?workflow=${newWorkflow.id}`);
-        alert(`工作流已创建！ID: ${newWorkflow.id}`);
       }
     } catch (error) {
       console.error('保存工作流失败:', error);
-      alert('保存工作流失败，请重试');
     }
   };
 
@@ -163,7 +152,7 @@ function App() {
       <Header
         onNewWorkflow={handleNewWorkflow}
         onLoadWorkflow={handleLoadWorkflow}
-        onSaveWorkflow={handleSaveWorkflow}
+        onSaveWorkflow={handleSaveWorkflowClick}
       />
 
       {/* 主体内容区域 */}
@@ -176,7 +165,7 @@ function App() {
         {/* 中间画布区域 */}
         <div className="main-content">
           <FlowCanvas
-            onSaveWorkflow={handleSaveWorkflow}
+            onSaveWorkflow={handleSaveWorkflowClick}
             onRunWorkflow={handleRunWorkflow}
           />
         </div>
@@ -189,6 +178,17 @@ function App() {
 
       {/* 调试抽屉 */}
       <DebugDrawer />
+
+      {/* 工作流弹窗 */}
+      <WorkflowModal
+        open={workflowModalOpen}
+        mode={workflowModalMode}
+        onClose={() => setWorkflowModalOpen(false)}
+        onLoadWorkflow={
+          workflowModalMode === 'load' ? handleModalLoadWorkflow : handleModalSaveWorkflow
+        }
+        currentWorkflowName={currentWorkflow?.name}
+      />
     </div>
   );
 }
