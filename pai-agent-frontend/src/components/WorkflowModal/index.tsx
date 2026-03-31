@@ -389,5 +389,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({
         </>
       )}
     </Modal>
+  );
+};
 
 export default WorkflowModal;
