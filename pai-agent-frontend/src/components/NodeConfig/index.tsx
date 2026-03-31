@@ -12,13 +12,14 @@ const NodeConfigPanel: React.FC = () => {
   const [outputConfigs, setOutputConfigs] = useState<any[]>([]);
   const [contentTemplate, setContentTemplate] = useState<string>('');
 
-  // 获取可用的引用节点（除当前输出节点外的所有节点）
+  // 获取可用的引用节点（除当前 LLM 节点外的所有节点）
   const getAvailableNodes = () => {
     if (!selectedNode) return [];
     return nodes.filter((n: any) => n.id !== selectedNode.id).map((n: any) => ({
       id: n.id,
       label: n.data?.label || '未命名节点',
       type: n.type,
+      data: n.data,
     }));
   };
 
@@ -51,6 +52,8 @@ const NodeConfigPanel: React.FC = () => {
         apiKey: selectedNode.data?.apiKey,
         temperature: selectedNode.data?.temperature !== undefined ? selectedNode.data?.temperature : 0.7,
         prompt: selectedNode.data?.prompt,
+        userPrompt: selectedNode.data?.userPrompt,
+        inputVariable: selectedNode.data?.inputVariable,
         toolType: selectedNode.data?.toolType,
         voice: selectedNode.data?.voice,
         outputFormat: selectedNode.data?.outputFormat,
@@ -314,6 +317,27 @@ const NodeConfigPanel: React.FC = () => {
                     <Select.Option value={2}>2 - 完全随机</Select.Option>
                   </Select>
                 </Form.Item>
+
+                {/* 输入变量引用 */}
+                <Form.Item
+                  label="输入变量"
+                  name="inputVariable"
+                  rules={[{ required: true, message: '请选择输入变量' }]}
+                  extra="选择要传递给模型的输入数据来源"
+                >
+                  <Select
+                    showSearch
+                    placeholder="选择输入节点"
+                  >
+                    {getAvailableNodes()
+                      .filter((node) => node.type === 'input')
+                      .map((node) => (
+                        <Select.Option key={node.id} value={node.id}>
+                          {node.label} ({node.data?.variableName || 'user_input'})
+                        </Select.Option>
+                      ))}
+                  </Select>
+                </Form.Item>
               </div>
 
               <Divider style={{ margin: '16px 0' }} />
@@ -324,12 +348,53 @@ const NodeConfigPanel: React.FC = () => {
                 </Text>
 
                 {/* 系统提示词 */}
-                <Form.Item label="系统提示词" name="prompt">
+                <Form.Item
+                  label="系统提示词"
+                  name="prompt"
+                  extra="设定 AI 的角色和行为规范"
+                >
                   <TextArea
                     rows={4}
-                    placeholder="请输入系统提示词，用于设定 AI 角色..."
+                    placeholder="例如：你是一位专业的广播节目编辑..."
                   />
                 </Form.Item>
+
+                {/* 用户提示词 */}
+                <Form.Item
+                  label="用户提示词模板"
+                  name="userPrompt"
+                  extra="使用 {{input}} 引用输入变量，可以添加额外指令"
+                >
+                  <TextArea
+                    rows={8}
+                    placeholder={`# 角色
+你是一位专业的广播节目编辑，负责制作一档名为"AI 电台"的节目...
+# 原始内容：{{input}}`}
+                  />
+                </Form.Item>
+
+                {/* 变量插入提示 */}
+                <div style={{ background: '#f5f7fa', padding: 12, borderRadius: 6, marginBottom: 16 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                    💡 可用变量
+                  </Text>
+                  <Space wrap>
+                    <Tag color="blue" style={{ cursor: 'pointer' }} onClick={() => {
+                      const textarea = document.querySelector('textarea[aria-label="用户提示词模板"]') as HTMLTextAreaElement;
+                      if (textarea) {
+                        const startPos = textarea.selectionStart;
+                        const endPos = textarea.selectionEnd;
+                        const value = textarea.value;
+                        textarea.value = value.substring(0, startPos) + '{{input}}' + value.substring(endPos);
+                      }
+                    }}>
+                      {'{{input}}'} - 输入节点内容
+                    </Tag>
+                  </Space>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                    点击变量标签可插入到上方提示词模板中
+                  </Text>
+                </div>
               </div>
             </>
           )}
