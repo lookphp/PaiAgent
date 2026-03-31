@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Card, Typography, Tag } from 'antd';
+import { Typography, Tag } from 'antd';
 import { ToolOutlined } from '@ant-design/icons';
+import './index.css';
 
 const { Text } = Typography;
 
@@ -10,39 +11,24 @@ const ToolNode: React.FC<NodeProps> = (props) => {
   const selected = props.selected;
 
   return (
-    <Card
-      size="small"
-      style={{
-        width: 220,
-        borderColor: selected ? '#1890ff' : '#d9d9d9',
-        boxShadow: selected ? '0 0 0 2px rgba(24, 144, 255, 0.3)' : 'none',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-        <ToolOutlined style={{ fontSize: 16, color: '#fa8c16', marginRight: 8 }} />
-        <Text strong>{data?.label || '工具节点'}</Text>
+    <div className={`flow-node tool-node ${selected ? 'selected' : ''}`}>
+      <div className="node-icon gradient-orange">
+        <ToolOutlined />
       </div>
-      {data?.toolType && (
-        <Tag color="orange" style={{ marginBottom: 4 }}>
-          {data.toolType}
-        </Tag>
-      )}
-      {data?.config && Object.keys(data.config).length > 0 && (
-        <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-          {Object.keys(data.config).join(', ')}
-        </Text>
-      )}
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: '#fa8c16' }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: '#fa8c16' }}
-      />
-    </Card>
+      <div className="node-content">
+        <Text strong>{data?.label || '工具节点'}</Text>
+        {data?.toolType && (
+          <Tag className="node-tag">{data.toolType}</Tag>
+        )}
+        {data?.config && Object.keys(data.config).length > 0 && (
+          <Text type="secondary" style={{ fontSize: 11 }}>
+            {Object.keys(data.config).join(', ')}
+          </Text>
+        )}
+      </div>
+      <Handle type="target" position={Position.Top} className="node-handle" />
+      <Handle type="source" position={Position.Bottom} className="node-handle" />
+    </div>
   );
 };
 

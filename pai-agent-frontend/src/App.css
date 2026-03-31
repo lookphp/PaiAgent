@@ -7,6 +7,12 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* React Flow 样式覆盖 */
+.react-flow__edge-path {
+  stroke-width: 2px;
+  marker-end: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="7" viewBox="0 0 10 7"><polygon points="0 0, 10 3.5, 0 7" fill="%231890ff"/></svg>');
+}
+
 /* 顶部导航栏样式 */
 .app-header {
   display: flex;
@@ -83,6 +89,13 @@
 /* React Flow 样式覆盖 */
 .react-flow__node {
   font-size: 14px;
+}
+
+/* 去掉 React Flow 默认的节点选中边框 */
+.react-flow__node-selected,
+.react-flow__node:focus,
+.react-flow__node-with-edge-context {
+  outline: none !important;
 }
 
 .react-flow__handle {

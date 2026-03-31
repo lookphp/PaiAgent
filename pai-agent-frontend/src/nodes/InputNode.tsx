@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Card, Typography } from 'antd';
+import { Typography } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import './index.css';
 
 const { Text } = Typography;
 
@@ -10,29 +11,16 @@ const InputNode: React.FC<NodeProps> = (props) => {
   const selected = props.selected;
 
   return (
-    <Card
-      size="small"
-      style={{
-        width: 200,
-        borderColor: selected ? '#1890ff' : '#d9d9d9',
-        boxShadow: selected ? '0 0 0 2px rgba(24, 144, 255, 0.3)' : 'none',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-        <UserOutlined style={{ fontSize: 16, color: '#52c41a', marginRight: 8 }} />
-        <Text strong>{data?.label || '用户输入'}</Text>
+    <div className={`flow-node input-node ${selected ? 'selected' : ''}`}>
+      <div className="node-icon gradient-green">
+        <UserOutlined />
       </div>
-      {data?.value && (
-        <Text type="secondary" style={{ fontSize: 12 }}>
-          {data.value}
-        </Text>
-      )}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: '#52c41a' }}
-      />
-    </Card>
+      <div className="node-content">
+        <Text strong>{data?.label || '用户输入'}</Text>
+        <Text type="secondary">起始节点</Text>
+      </div>
+      <Handle type="source" position={Position.Bottom} className="node-handle" />
+    </div>
   );
 };
 

@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Card, Typography, Tag } from 'antd';
+import { Typography, Tag } from 'antd';
 import { ApiOutlined } from '@ant-design/icons';
+import './index.css';
 
 const { Text } = Typography;
 
@@ -10,39 +11,32 @@ const LLMNode: React.FC<NodeProps> = (props) => {
   const selected = props.selected;
 
   return (
-    <Card
-      size="small"
-      style={{
-        width: 220,
-        borderColor: selected ? '#1890ff' : '#d9d9d9',
-        boxShadow: selected ? '0 0 0 2px rgba(24, 144, 255, 0.3)' : 'none',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-        <ApiOutlined style={{ fontSize: 16, color: '#722ed1', marginRight: 8 }} />
-        <Text strong>{data?.label || '大模型'}</Text>
+    <div className={`flow-node llm-node ${selected ? 'selected' : ''}`}>
+      <div className="node-icon gradient-purple">
+        <ApiOutlined />
       </div>
-      {data?.model && (
-        <Tag color="purple" style={{ marginBottom: 4 }}>
-          {data.model}
-        </Tag>
-      )}
-      {data?.prompt && (
-        <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-          {data.prompt.substring(0, 50)}{data.prompt.length > 50 ? '...' : ''}
-        </Text>
-      )}
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: '#722ed1' }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: '#722ed1' }}
-      />
-    </Card>
+      <div className="node-content">
+        <Text strong>{data?.label || '大模型'}</Text>
+        {data?.model && (
+          <Tag className="node-tag">{data.model}</Tag>
+        )}
+        {data?.prompt && (
+          <Text
+            type="secondary"
+            style={{
+              fontSize: 11,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {data.prompt.substring(0, 30)}{data.prompt.length > 30 ? '...' : ''}
+          </Text>
+        )}
+      </div>
+      <Handle type="target" position={Position.Top} className="node-handle" />
+      <Handle type="source" position={Position.Bottom} className="node-handle" />
+    </div>
   );
 };
 

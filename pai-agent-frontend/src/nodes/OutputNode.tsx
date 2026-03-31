@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Card, Typography } from 'antd';
+import { Typography } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
+import './index.css';
 
 const { Text } = Typography;
 
@@ -10,29 +11,18 @@ const OutputNode: React.FC<NodeProps> = (props) => {
   const selected = props.selected;
 
   return (
-    <Card
-      size="small"
-      style={{
-        width: 200,
-        borderColor: selected ? '#1890ff' : '#d9d9d9',
-        boxShadow: selected ? '0 0 0 2px rgba(24, 144, 255, 0.3)' : 'none',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-        <CheckCircleOutlined style={{ fontSize: 16, color: '#1890ff', marginRight: 8 }} />
-        <Text strong>{data?.label || '输出'}</Text>
+    <div className={`flow-node output-node ${selected ? 'selected' : ''}`}>
+      <div className="node-icon gradient-blue">
+        <CheckCircleOutlined />
       </div>
-      {data?.output && (
-        <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-          {data.output}
+      <div className="node-content">
+        <Text strong>{data?.label || '输出'}</Text>
+        <Text type="secondary">
+          {data?.outputFormat === 'audio' ? 'AI 播客' : '文本输出'}
         </Text>
-      )}
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: '#1890ff' }}
-      />
-    </Card>
+      </div>
+      <Handle type="target" position={Position.Top} className="node-handle" />
+    </div>
   );
 };
 

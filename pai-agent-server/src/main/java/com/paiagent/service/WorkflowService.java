@@ -1,9 +1,12 @@
 package com.paiagent.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paiagent.dto.WorkflowDto;
 import com.paiagent.model.Workflow;
 import com.paiagent.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +16,13 @@ import java.util.stream.Collectors;
 /**
  * 工作流服务类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkflowService {
 
     private final WorkflowRepository workflowRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public List<WorkflowDto> findAll() {
@@ -80,8 +85,32 @@ public class WorkflowService {
         workflow.setId(dto.getId());
         workflow.setName(dto.getName());
         workflow.setDescription(dto.getDescription());
-        workflow.setNodes(dto.getNodes());
-        workflow.setEdges(dto.getEdges());
+
+        // 将 JSON 数组转换为字符串存储
+        try {
+            // 处理 nodes
+            if (dto.getNodesObject() != null) {
+                workflow.setNodes(objectMapper.writeValueAsString(dto.getNodesObject()));
+            } else if (dto.getNodes() != null && !dto.getNodes().isEmpty()) {
+                workflow.setNodes(dto.getNodes());
+            } else {
+                workflow.setNodes("[]");
+            }
+
+            // 处理 edges
+            if (dto.getEdgesObject() != null) {
+                workflow.setEdges(objectMapper.writeValueAsString(dto.getEdgesObject()));
+            } else if (dto.getEdges() != null && !dto.getEdges().isEmpty()) {
+                workflow.setEdges(dto.getEdges());
+            } else {
+                workflow.setEdges("[]");
+            }
+        } catch (JsonProcessingException e) {
+            log.error("JSON 处理错误：", e);
+            workflow.setNodes("[]");
+            workflow.setEdges("[]");
+        }
+
         workflow.setConfig(dto.getConfig());
         return workflow;
     }

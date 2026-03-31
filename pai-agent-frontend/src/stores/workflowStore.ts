@@ -28,6 +28,7 @@ interface WorkflowState {
   addWorkflow: (workflow: Workflow) => void;
   setCurrentWorkflow: (workflow: Workflow | null) => void;
   saveCurrentWorkflow: () => void;
+  setWorkflows: (workflows: Workflow[]) => void;
 
   // Actions - React Flow
   setNodes: (nodes: Node[]) => void;
@@ -88,10 +89,42 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     }));
   },
 
+  setWorkflows: (workflows) => {
+    set({ workflows });
+  },
+
   setCurrentWorkflow: (workflow) => {
     set({ currentWorkflow: workflow });
     if (workflow) {
-      set({ nodes: workflow.nodes || [], edges: workflow.edges || [] });
+      // 处理 nodes - 可能是 JSON 字符串或数组
+      let parsedNodes: Node[] = [];
+      if (workflow.nodes) {
+        if (typeof workflow.nodes === 'string') {
+          try {
+            parsedNodes = JSON.parse(workflow.nodes);
+          } catch (e) {
+            parsedNodes = [];
+          }
+        } else {
+          parsedNodes = workflow.nodes as Node[];
+        }
+      }
+
+      // 处理 edges - 可能是 JSON 字符串或数组
+      let parsedEdges: Edge[] = [];
+      if (workflow.edges) {
+        if (typeof workflow.edges === 'string') {
+          try {
+            parsedEdges = JSON.parse(workflow.edges);
+          } catch (e) {
+            parsedEdges = [];
+          }
+        } else {
+          parsedEdges = workflow.edges as Edge[];
+        }
+      }
+
+      set({ nodes: parsedNodes, edges: parsedEdges });
     }
   },
 

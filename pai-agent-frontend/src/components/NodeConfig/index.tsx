@@ -1,6 +1,6 @@
-import React from 'react';
-import { Form, Input, Select, Button, Typography, Divider, Space } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Form, Input, Select, Button, Typography, Divider, Space, Checkbox, Tag } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
 
 const { TextArea } = Input;
@@ -8,7 +8,39 @@ const { Text, Title } = Typography;
 
 const NodeConfigPanel: React.FC = () => {
   const [form] = Form.useForm();
-  const { selectedNode, setConfigDrawerOpen, updateNode, setSelectedNode } = useWorkflowStore();
+  const { selectedNode, setConfigDrawerOpen, updateNode, setSelectedNode, nodes, edges } = useWorkflowStore();
+  const [outputConfigs, setOutputConfigs] = useState<any[]>([]);
+  const [contentTemplate, setContentTemplate] = useState<string>('');
+
+  // 获取可用的引用节点（除当前输出节点外的所有节点）
+  const getAvailableNodes = () => {
+    if (!selectedNode) return [];
+    return nodes.filter((n: any) => n.id !== selectedNode.id).map((n: any) => ({
+      id: n.id,
+      label: n.data?.label || '未命名节点',
+      type: n.type,
+    }));
+  };
+
+  // 添加输出配置行
+  const handleAddOutputConfig = () => {
+    setOutputConfigs([
+      ...outputConfigs,
+      { id: Date.now(), paramName: '', paramType: 'input', inputValue: '', referenceNode: '', referenceField: '' },
+    ]);
+  };
+
+  // 删除输出配置行
+  const handleRemoveOutputConfig = (id: number) => {
+    setOutputConfigs(outputConfigs.filter((item) => item.id !== id));
+  };
+
+  // 更新输出配置行
+  const handleUpdateOutputConfig = (id: number, field: string, value: string) => {
+    setOutputConfigs(
+      outputConfigs.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
 
   React.useEffect(() => {
     if (selectedNode) {
@@ -19,16 +51,36 @@ const NodeConfigPanel: React.FC = () => {
         toolType: selectedNode.data?.toolType,
         voice: selectedNode.data?.voice,
         outputFormat: selectedNode.data?.outputFormat,
+        variableName: selectedNode.data?.variableName || 'user_input',
+        variableType: selectedNode.data?.variableType || 'String',
+        description: selectedNode.data?.description || '用户本轮的输入内容',
+        required: selectedNode.data?.required !== false,
       });
+      // 加载输出配置
+      const data = selectedNode.data as any;
+      if (data.outputConfigs) {
+        setOutputConfigs(data.outputConfigs);
+      }
+      if (data.contentTemplate) {
+        setContentTemplate(data.contentTemplate);
+      }
     } else {
       form.resetFields();
+      setOutputConfigs([]);
+      setContentTemplate('');
     }
   }, [selectedNode, form]);
 
   const handleSave = () => {
     form.validateFields().then((values) => {
       if (selectedNode) {
-        updateNode(selectedNode.id, values);
+        // 保存输出配置和内容模板
+        const updatedData: any = { ...values };
+        if (selectedNode.type === 'output') {
+          updatedData.outputConfigs = outputConfigs;
+          updatedData.contentTemplate = contentTemplate;
+        }
+        updateNode(selectedNode.id, updatedData);
         setSelectedNode(null);
       }
     });
@@ -130,6 +182,68 @@ const NodeConfigPanel: React.FC = () => {
             <Input placeholder="请输入节点名称" />
           </Form.Item>
 
+          {/* 输入节点配置 */}
+          {selectedNode.type === 'input' && (
+            <>
+              <Divider style={{ margin: '16px 0' }} />
+
+              <div style={{ marginBottom: 16 }}>
+                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+                  输入变量配置
+                </Text>
+
+                {/* 变量名 */}
+                <Form.Item
+                  label="变量名"
+                  name="variableName"
+                  initialValue="user_input"
+                  rules={[{ required: true, message: '请输入变量名' }]}
+                >
+                  <Input placeholder="例如：user_input" disabled />
+                </Form.Item>
+
+                {/* 变量类型 */}
+                <Form.Item
+                  label="变量类型"
+                  name="variableType"
+                  initialValue="String"
+                  rules={[{ required: true, message: '请选择变量类型' }]}
+                >
+                  <Select disabled>
+                    <Select.Option value="String">String</Select.Option>
+                    <Select.Option value="Number">Number</Select.Option>
+                    <Select.Option value="Boolean">Boolean</Select.Option>
+                    <Select.Option value="Object">Object</Select.Option>
+                    <Select.Option value="Array">Array</Select.Option>
+                  </Select>
+                </Form.Item>
+
+                {/* 描述 */}
+                <Form.Item
+                  label="描述"
+                  name="description"
+                  initialValue="用户本轮的输入内容"
+                  rules={[{ required: true, message: '请输入描述' }]}
+                >
+                  <TextArea
+                    rows={2}
+                    placeholder="例如：用户本轮的输入内容"
+                  />
+                </Form.Item>
+
+                {/* 是否必要 */}
+                <Form.Item
+                  label="是否必要"
+                  name="required"
+                  initialValue={true}
+                  valuePropName="checked"
+                >
+                  <Checkbox disabled />
+                </Form.Item>
+              </div>
+            </>
+          )}
+
           {/* 大模型节点配置 */}
           {selectedNode.type === 'llm' && (
             <>
@@ -190,26 +304,83 @@ const NodeConfigPanel: React.FC = () => {
 
               {/* 输出配置 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <Text strong>输出配置</Text>
-                  <Button type="link" size="small" icon={<PlusOutlined />}>
+                  <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddOutputConfig}>
                     添加
                   </Button>
                 </div>
 
-                <Space size="small" style={{ marginBottom: 16 }}>
-                  <Input defaultValue="output" style={{ width: 120 }} size="small" />
-                  <Select defaultValue="引用" style={{ width: 80 }} size="small" />
-                  <Select
-                    defaultValue="超拟人音频合成.audioUrl"
-                    style={{ width: 200 }}
+                {outputConfigs.length === 0 && (
+                  <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                    暂无输出配置，请点击"添加"按钮添加
+                  </div>
+                )}
+
+                {outputConfigs.map((item) => (
+                  <Space
+                    key={item.id}
                     size="small"
+                    style={{
+                      marginBottom: 8,
+                      padding: '8px',
+                      background: '#fafafa',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                    }}
                   >
-                    <Select.Option value="audio-synthesis.audioUrl">
-                      超拟人音频合成.audioUrl
-                    </Select.Option>
-                  </Select>
-                </Space>
+                    {/* 参数名输入框 */}
+                    <Input
+                      placeholder="参数名"
+                      value={item.paramName}
+                      onChange={(e) => handleUpdateOutputConfig(item.id, 'paramName', e.target.value)}
+                      style={{ width: 100 }}
+                      size="small"
+                    />
+                    {/* 参数类型 */}
+                    <Select
+                      value={item.paramType}
+                      onChange={(value) => handleUpdateOutputConfig(item.id, 'paramType', value)}
+                      style={{ width: 70 }}
+                      size="small"
+                    >
+                      <Select.Option value="input">输入</Select.Option>
+                      <Select.Option value="reference">引用</Select.Option>
+                    </Select>
+                    {/* 输入或引用 */}
+                    {item.paramType === 'input' ? (
+                      <Input
+                        placeholder="请输入"
+                        value={item.inputValue}
+                        onChange={(e) => handleUpdateOutputConfig(item.id, 'inputValue', e.target.value)}
+                        style={{ width: 180 }}
+                        size="small"
+                      />
+                    ) : (
+                      <Select
+                        placeholder="选择引用"
+                        value={item.referenceNode || undefined}
+                        onChange={(value) => handleUpdateOutputConfig(item.id, 'referenceNode', value)}
+                        style={{ width: 180 }}
+                        size="small"
+                      >
+                        {getAvailableNodes().map((node) => (
+                          <Select.Option key={node.id} value={node.id}>
+                            {node.label}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    )}
+                    {/* 删除按钮 */}
+                    <Button
+                      type="text"
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleRemoveOutputConfig(item.id)}
+                    />
+                  </Space>
+                ))}
               </div>
 
               {/* 回答内容配置 */}
@@ -219,13 +390,30 @@ const NodeConfigPanel: React.FC = () => {
                 </Text>
                 <TextArea
                   rows={4}
-                  defaultValue="{{output}}"
+                  value={contentTemplate}
+                  onChange={(e) => setContentTemplate(e.target.value)}
                   placeholder="使用 {{ 参数名 }} 引用上面定义的参数"
                 />
                 <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                  💡 提示：使用 {'{{'} 参数名 {'}}'} 引用上面定义的参数
+                  💡 提示：使用 {'{{'} 参数名 {'}}'} 引用上面定义的参数，例如：{`{{output}}`}
                 </Text>
               </div>
+
+              {/* 已定义的参数列表 */}
+              {outputConfigs.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                    已定义的参数
+                  </Text>
+                  <Space wrap>
+                    {outputConfigs.map((item) => (
+                      <Tag key={item.id} color="blue" style={{ cursor: 'pointer' }}>
+                        {`{{${item.paramName || '未命名'}}}`}
+                      </Tag>
+                    ))}
+                  </Space>
+                </div>
+              )}
             </>
           )}
         </Form>

@@ -1,0 +1,190 @@
+/* 节点基础样式 */
+.flow-node {
+  width: 115px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* 确保节点内容不会覆盖 Handle */
+.flow-node > :not(.node-handle) {
+  position: relative;
+  z-index: 1;
+}
+
+/* 覆盖 React Flow 默认节点样式 */
+.react-flow__node-input,
+.react-flow__node-default,
+.react-flow__node-output,
+.react-flow__node-group {
+  width: 115px;
+  padding: 0;
+  margin: 0;
+}
+
+.react-flow__node-input .react-flow__node-content,
+.react-flow__node-default .react-flow__node-content,
+.react-flow__node-output .react-flow__node-content,
+.react-flow__node-group .react-flow__node-content {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.flow-node.selected {
+  border-color: #52c41a;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.25);
+}
+
+/* 节点图标 */
+.node-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.node-icon.gradient-green {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  color: #fff;
+}
+
+.node-icon.gradient-blue {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  color: #fff;
+}
+
+.node-icon.gradient-purple {
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+  color: #fff;
+}
+
+.node-icon.gradient-orange {
+  background: linear-gradient(135deg, #fa8c16 0%, #d46b08 100%);
+  color: #fff;
+}
+
+/* 节点内容 */
+.node-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.node-content .ant-typography:first-child {
+  font-size: 12px;
+  color: #1f2937;
+  margin: 0;
+}
+
+.node-content .ant-typography-secondary {
+  font-size: 10px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* 节点 Handle */
+.node-handle {
+  background: #52c41a;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #52c41a;
+  position: absolute;
+}
+
+.node-handle[data-handlepos='bottom'] {
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.node-handle[data-handlepos='top'] {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 输入节点 */
+.input-node.selected {
+  border-color: #52c41a;
+}
+
+.input-node .node-handle {
+  background: #52c41a;
+  box-shadow: 0 0 0 1px #52c41a;
+}
+
+/* 输出节点 */
+.output-node.selected {
+  border-color: #1890ff;
+}
+
+.output-node .node-handle {
+  background: #1890ff;
+  box-shadow: 0 0 0 1px #1890ff;
+}
+
+/* LLM 节点 */
+.llm-node {
+  width: 140px;
+  border-radius: 8px;
+}
+
+.llm-node.selected {
+  border-color: #722ed1;
+}
+
+.llm-node .node-handle {
+  background: #722ed1;
+  box-shadow: 0 0 0 1px #722ed1;
+}
+
+.llm-node .node-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: none;
+  background: #f3e8ff;
+  color: #722ed1;
+  margin-top: 4px;
+}
+
+/* 工具节点 */
+.tool-node {
+  width: 140px;
+  border-radius: 8px;
+}
+
+.tool-node.selected {
+  border-color: #fa8c16;
+}
+
+.tool-node .node-handle {
+  background: #fa8c16;
+  box-shadow: 0 0 0 1px #fa8c16;
+}
+
+.tool-node .node-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: none;
+  background: #fff7e6;
+  color: #fa8c16;
+  margin-top: 4px;
+}

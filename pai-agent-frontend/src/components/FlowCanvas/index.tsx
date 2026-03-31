@@ -14,9 +14,11 @@ import {
   type NodeChange,
   type EdgeChange,
   type NodeTypes,
+  type Edge,
   BackgroundVariant,
   applyNodeChanges,
   applyEdgeChanges,
+  ConnectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { message } from 'antd';
@@ -66,13 +68,15 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
 
   const onConnect = useCallback(
     (params: Connection) => {
-      store.addEdge({
+      const edge = {
         id: params.source + '-' + params.target,
         ...params,
         type: 'smoothstep',
         animated: true,
         style: { stroke: '#1890ff', strokeWidth: 2 },
-      } as any);
+        markerEnd: 'arrowclosed',
+      };
+      store.addEdge(edge as any);
     },
     [store.addEdge]
   );
@@ -83,6 +87,15 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
       store.setConfigDrawerOpen(true);
     },
     [store.setSelectedNode, store.setConfigDrawerOpen]
+  );
+
+  const onEdgeClick = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      if (window.confirm('确定要删除这条连线吗？')) {
+        store.removeEdge(edge.id);
+      }
+    },
+    [store.removeEdge]
   );
 
   const onPaneClick = useCallback(() => {
@@ -169,6 +182,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -178,7 +192,23 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
         snapToGrid
         snapGrid={[15, 15]}
         deleteKeyCode={['Backspace', 'Delete']}
+        connectionMode={ConnectionMode.Loose}
         style={{ background: '#f5f5f5' }}
+        nodesConnectable={true}
+        nodesDraggable={true}
+        nodesFocusable={false}
+        edgesFocusable={true}
+        edgesReconnectable={true}
+        panOnScroll={true}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        preventScrolling={false}
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#1890ff', strokeWidth: 2 },
+          markerEnd: 'url(#arrowhead)',
+        }}
       >
         <Controls />
         <MiniMap

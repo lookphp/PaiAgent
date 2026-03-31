@@ -1,14 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import NodePalette from './components/NodePalette';
 import FlowCanvas from './components/FlowCanvas';
 import DebugDrawer from './components/DebugDrawer';
 import NodeConfigPanel from './components/NodeConfig';
 import Header from './components/Header';
 import { useWorkflowStore } from './stores/workflowStore';
+import { workflowApi } from './services/workflowApi';
 import './App.css';
 
 function App() {
-  const { nodes, edges, currentWorkflow, setCurrentWorkflow, setNodes, setEdges } = useWorkflowStore();
+  const { nodes, edges, currentWorkflow, setCurrentWorkflow, setNodes, setEdges, workflows, setWorkflows } = useWorkflowStore();
+
+  // 页面加载时从 URL 读取工作流 ID 并加载
+  useEffect(() => {
+    const loadWorkflowFromURL = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const workflowId = params.get('workflow');
+
+      if (workflowId) {
+        try {
+          const workflow = await workflowApi.get(workflowId);
+          setCurrentWorkflow(workflow);
+          // 解析 JSON 字符串为数组
+          const parsedNodes = typeof workflow.nodes === 'string' ? JSON.parse(workflow.nodes) : workflow.nodes;
+          const parsedEdges = typeof workflow.edges === 'string' ? JSON.parse(workflow.edges) : workflow.edges;
+          setNodes(parsedNodes || []);
+          setEdges(parsedEdges || []);
+        } catch (error) {
+          console.error('加载工作流失败:', error);
+        }
+      }
+    };
+
+    loadWorkflowFromURL();
+  }, []);
 
   const handleDragStart = (event: React.DragEvent, nodeType: string, modelType?: string) => {
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -33,14 +58,99 @@ function App() {
     ]);
     setEdges([]);
     setCurrentWorkflow(null);
+    // 清除 URL 中的 workflow 参数
+    window.history.pushState({}, '', window.location.pathname);
   };
 
-  const handleLoadWorkflow = () => {
-    // TODO: 实现加载工作流
+  const handleLoadWorkflow = async () => {
+    try {
+      const list = await workflowApi.list();
+      setWorkflows(list);
+
+      // 显示选择对话框
+      const selectedId = window.prompt(
+        '请输入要加载的工作流 ID，或输入列表编号：\n' +
+        list.map((w, i) => `${i + 1}. ${w.name} (ID: ${w.id})`).join('\n')
+      );
+
+      if (!selectedId) return;
+
+      // 如果输入的是数字，选择对应编号的工作流
+      const index = parseInt(selectedId) - 1;
+      let workflowId: string;
+
+      if (index >= 0 && index < list.length) {
+        workflowId = String(list[index].id);
+      } else {
+        workflowId = selectedId;
+      }
+
+      const workflow = await workflowApi.get(workflowId);
+      setCurrentWorkflow(workflow);
+      // 解析 JSON 字符串为数组
+      const parsedNodes = typeof workflow.nodes === 'string' ? JSON.parse(workflow.nodes) : workflow.nodes;
+      const parsedEdges = typeof workflow.edges === 'string' ? JSON.parse(workflow.edges) : workflow.edges;
+      setNodes(parsedNodes || []);
+      setEdges(parsedEdges || []);
+
+      // 更新 URL
+      window.history.pushState({}, '', `?workflow=${workflowId}`);
+
+      alert(`已加载工作流：${workflow.name}`);
+    } catch (error) {
+      console.error('加载工作流失败:', error);
+      alert('加载工作流失败，请重试');
+    }
   };
 
-  const handleSaveWorkflow = () => {
-    // TODO: 实现保存工作流
+  const handleSaveWorkflow = async () => {
+    try {
+      if (currentWorkflow) {
+        // 更新现有工作流 - 直接发送对象，让 nodes 和 edges 保持为数组
+        const updatedData: any = {
+          name: currentWorkflow.name,
+          description: currentWorkflow.description,
+          nodes: JSON.stringify(nodes),
+          edges: JSON.stringify(edges),
+        };
+        await workflowApi.update(String(currentWorkflow.id), updatedData);
+
+        // 更新本地状态
+        setCurrentWorkflow({
+          ...currentWorkflow,
+          nodes,
+          edges,
+          updatedAt: new Date().toISOString(),
+        });
+        alert('工作流已更新！');
+      } else {
+        // 创建新工作流
+        const name = window.prompt('请输入工作流名称：') || '未命名工作流';
+        const newWorkflow = await workflowApi.create({
+          name,
+          nodes: JSON.stringify(nodes),
+          edges: JSON.stringify(edges),
+        } as any);
+
+        // 解析返回的 JSON 字符串为数组
+        const parsedNodes = typeof newWorkflow.nodes === 'string' ? JSON.parse(newWorkflow.nodes) : newWorkflow.nodes;
+        const parsedEdges = typeof newWorkflow.edges === 'string' ? JSON.parse(newWorkflow.edges) : newWorkflow.edges;
+
+        // 更新本地状态
+        setCurrentWorkflow({
+          ...newWorkflow,
+          nodes: parsedNodes || [],
+          edges: parsedEdges || [],
+        });
+
+        // 更新 URL
+        window.history.pushState({}, '', `?workflow=${newWorkflow.id}`);
+        alert(`工作流已创建！ID: ${newWorkflow.id}`);
+      }
+    } catch (error) {
+      console.error('保存工作流失败:', error);
+      alert('保存工作流失败，请重试');
+    }
   };
 
   const handleRunWorkflow = () => {
