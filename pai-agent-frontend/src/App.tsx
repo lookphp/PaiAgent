@@ -24,14 +24,11 @@ function App() {
       if (workflowId) {
         try {
           const workflow = await workflowApi.get(workflowId);
+          // setCurrentWorkflow 会自动解析并设置 nodes 和 edges
           setCurrentWorkflow(workflow);
-          // 解析 JSON 字符串为数组
-          const parsedNodes = typeof workflow.nodes === 'string' ? JSON.parse(workflow.nodes) : workflow.nodes;
-          const parsedEdges = typeof workflow.edges === 'string' ? JSON.parse(workflow.edges) : workflow.edges;
-          setNodes(parsedNodes || []);
-          setEdges(parsedEdges || []);
         } catch (error) {
           console.error('加载工作流失败:', error);
+          alert('加载工作流失败：' + (error as any).message);
         }
       }
     };

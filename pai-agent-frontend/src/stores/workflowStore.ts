@@ -110,6 +110,12 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         }
       }
 
+      // 为没有 position 的节点添加默认位置
+      parsedNodes = parsedNodes.map((node, index) => ({
+        ...node,
+        position: node.position || { x: 100 + index * 50, y: 100 + index * 50 },
+      }));
+
       // 处理 edges - 可能是 JSON 字符串或数组
       let parsedEdges: Edge[] = [];
       if (workflow.edges) {
@@ -123,6 +129,13 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
           parsedEdges = workflow.edges as Edge[];
         }
       }
+
+      // 为没有 id 的边添加 id
+      parsedEdges = parsedEdges.map((edge) => ({
+        ...edge,
+        id: edge.id || `${edge.source}-${edge.target}`,
+        type: edge.type || 'smoothstep',
+      }));
 
       set({ nodes: parsedNodes, edges: parsedEdges });
     }
