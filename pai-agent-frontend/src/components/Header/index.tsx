@@ -50,10 +50,10 @@ const Header: React.FC<HeaderProps> = ({
             <span className="workflow-name" title={currentWorkflow.name}>
               {currentWorkflow.name}
             </span>
-            <Tag color="blue" style={{ marginLeft: 8 }}>
+            <Tag color="blue" style={{ marginLeft: 8, borderRadius: 4 }}>
               {nodes.length} 节点
             </Tag>
-            <Tag color="green">
+            <Tag color="green" style={{ borderRadius: 4 }}>
               {edges.length} 连接
             </Tag>
             {currentWorkflow.updatedAt && (
@@ -72,24 +72,42 @@ const Header: React.FC<HeaderProps> = ({
         <Search
           placeholder="搜索工作流、节点..."
           allowClear
-          style={{ width: 200, marginLeft: 16 }}
+          style={{ width: 220, marginLeft: 16 }}
           prefix={<SearchOutlined />}
+          className="header-search"
         />
       </div>
 
       {/* 右侧：操作按钮 + 用户信息 */}
       <div className="header-right">
-        <Space size="middle">
-          <Button icon={<PlusOutlined />} onClick={onNewWorkflow}>
+        <Space size="small">
+          <Button
+            icon={<PlusOutlined />}
+            onClick={onNewWorkflow}
+            size="middle"
+            style={{ borderRadius: 6 }}
+          >
             新建
           </Button>
-          <Button icon={<FolderOpenOutlined />} onClick={onLoadWorkflow}>
+          <Button
+            icon={<FolderOpenOutlined />}
+            onClick={onLoadWorkflow}
+            size="middle"
+            style={{ borderRadius: 6 }}
+          >
             加载
           </Button>
           <Button
             type="primary"
             icon={<SaveOutlined />}
             onClick={onSaveWorkflow}
+            size="middle"
+            style={{
+              borderRadius: 6,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              fontWeight: 500,
+            }}
           >
             保存
           </Button>
@@ -97,6 +115,14 @@ const Header: React.FC<HeaderProps> = ({
             type={debugDrawerOpen ? 'primary' : 'default'}
             icon={<BugOutlined />}
             onClick={() => setDebugDrawerOpen(!debugDrawerOpen)}
+            size="middle"
+            style={{
+              borderRadius: 6,
+              background: debugDrawerOpen
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : undefined,
+              borderColor: debugDrawerOpen ? '#10b981' : undefined,
+            }}
           >
             调试
           </Button>
@@ -109,19 +135,30 @@ const Header: React.FC<HeaderProps> = ({
                 alignItems: 'center',
                 gap: 8,
                 cursor: 'pointer',
-                padding: '4px 8px',
-                borderRadius: 4,
-                transition: 'background 0.2s',
+                padding: '6px 12px',
+                borderRadius: 8,
+                transition: 'all 0.2s',
+                border: '1px solid transparent',
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = '#f5f5f5')
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = 'transparent')
-              }
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#f0f9ff';
+                e.currentTarget.style.borderColor = '#bae6fd';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
             >
-              <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
-              <span style={{ fontSize: 14 }}>admin</span>
+              <Avatar
+                icon={<UserOutlined />}
+                style={{
+                  backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  fontWeight: 600,
+                }}
+              >
+                A
+              </Avatar>
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#374151' }}>admin</span>
             </div>
           </Dropdown>
         </Space>

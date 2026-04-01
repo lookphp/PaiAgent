@@ -28,16 +28,17 @@ interface NodeItem {
 
 const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
   const draggableItemStyle: React.CSSProperties = {
-    padding: '10px 12px',
-    marginBottom: 6,
-    border: '1px solid #e8e8e8',
-    borderRadius: 6,
+    padding: '12px 14px',
+    marginBottom: 8,
+    border: '1px solid #e5e7eb',
+    borderRadius: 8,
     cursor: 'grab',
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#fafafa',
-    transition: 'all 0.2s',
+    gap: 12,
+    backgroundColor: '#fff',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+    transition: 'all 0.2s ease',
     userSelect: 'none',
   };
 
@@ -101,18 +102,36 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
       onDragStart={(e) => onDragStart(e, 'llm', node.modelType)}
       style={draggableItemStyle}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#f0f5ff';
-        e.currentTarget.style.borderColor = '#1890ff';
+        e.currentTarget.style.backgroundColor = '#eff6ff';
+        e.currentTarget.style.borderColor = '#3b82f6';
+        e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.15)';
+        e.currentTarget.style.transform = 'translateY(-1px)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#fafafa';
-        e.currentTarget.style.borderColor = '#e8e8e8';
+        e.currentTarget.style.backgroundColor = '#fff';
+        e.currentTarget.style.borderColor = '#e5e7eb';
+        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)';
+        e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      <div style={{ ...iconStyle, color: node.color }}>{node.icon}</div>
+      <div
+        style={{
+          ...iconStyle,
+          color: node.color,
+          width: 32,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: `${node.color}15`,
+          borderRadius: 6,
+        }}
+      >
+        {node.icon}
+      </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 500, fontSize: 14 }}>{node.label}</div>
-        <div style={{ fontSize: 11, color: '#999' }}>{node.description}</div>
+        <div style={{ fontWeight: 500, fontSize: 14, color: '#1f2937' }}>{node.label}</div>
+        <div style={{ fontSize: 11, color: '#9ca3af' }}>{node.description}</div>
       </div>
     </div>
   );
@@ -124,32 +143,56 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
       onDragStart={(e) => onDragStart(e, 'tool', node.modelType)}
       style={draggableItemStyle}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#f0f5ff';
-        e.currentTarget.style.borderColor = '#1890ff';
+        e.currentTarget.style.backgroundColor = '#eff6ff';
+        e.currentTarget.style.borderColor = '#3b82f6';
+        e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.15)';
+        e.currentTarget.style.transform = 'translateY(-1px)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#fafafa';
-        e.currentTarget.style.borderColor = '#e8e8e8';
+        e.currentTarget.style.backgroundColor = '#fff';
+        e.currentTarget.style.borderColor = '#e5e7eb';
+        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)';
+        e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      <div style={{ ...iconStyle, color: node.color }}>{node.icon}</div>
+      <div
+        style={{
+          ...iconStyle,
+          color: node.color,
+          width: 32,
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: `${node.color}15`,
+          borderRadius: 6,
+        }}
+      >
+        {node.icon}
+      </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 500, fontSize: 14 }}>{node.label}</div>
-        <div style={{ fontSize: 11, color: '#999' }}>{node.description}</div>
+        <div style={{ fontWeight: 500, fontSize: 14, color: '#1f2937' }}>{node.label}</div>
+        <div style={{ fontSize: 11, color: '#9ca3af' }}>{node.description}</div>
       </div>
     </div>
   );
 
   return (
     <div className="node-palette" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
-        <span style={{ fontSize: 16, fontWeight: 600 }}>节点库</span>
+      <div
+        style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid #f3f4f6',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+        }}
+      >
+        <span style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>节点库</span>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
         {/* 大模型节点分类 */}
-        <div style={{ marginBottom: 16 }}>
-          <Divider style={{ fontSize: 13, color: '#999', margin: '0 0 12px 0' }}>
+        <div style={{ marginBottom: 20 }}>
+          <Divider style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px 0', fontWeight: 500 }}>
             🤖 大模型节点
           </Divider>
           {llmNodes.map(renderLlmNodeItem)}
@@ -157,7 +200,7 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
 
         {/* 工具节点分类 */}
         <div>
-          <Divider style={{ fontSize: 13, color: '#999', margin: '12px 0' }}>
+          <Divider style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px 0', fontWeight: 500 }}>
             🔧 工具节点
           </Divider>
           {toolNodes.map(renderToolNodeItem)}
@@ -167,13 +210,13 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
         <div
           style={{
             marginTop: 24,
-            padding: '12px',
-            backgroundColor: '#e6f7ff',
-            borderRadius: 6,
-            border: '1px dashed #1890ff',
+            padding: '14px 16px',
+            backgroundColor: '#eff6ff',
+            borderRadius: 8,
+            border: '1px dashed #3b82f6',
           }}
         >
-          <div style={{ fontSize: 12, color: '#666' }}>
+          <div style={{ fontSize: 12, color: '#6b7280' }}>
             💡 拖拽节点到画布中使用
           </div>
         </div>

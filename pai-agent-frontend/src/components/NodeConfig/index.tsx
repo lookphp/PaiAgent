@@ -160,8 +160,8 @@ const NodeConfigPanel: React.FC = () => {
         style={{
           width: '100%',
           height: '100%',
-          background: '#fff',
-          padding: '20px',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+          padding: '24px',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -169,11 +169,11 @@ const NodeConfigPanel: React.FC = () => {
         <div
           style={{
             padding: '16px 0',
-            borderBottom: '1px solid #f0f0f0',
-            marginBottom: 16,
+            borderBottom: '1px solid #e2e8f0',
+            marginBottom: 24,
           }}
         >
-          <Title level={4} style={{ margin: 0 }}>节点配置</Title>
+          <Title level={4} style={{ margin: 0, color: '#1e293b' }}>节点配置</Title>
         </div>
         <div
           style={{
@@ -181,10 +181,13 @@ const NodeConfigPanel: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#999',
+            color: '#94a3b8',
+            flexDirection: 'column',
+            gap: 12,
           }}
         >
-          <Text>请点击节点进行配置</Text>
+          <div style={{ fontSize: 48, opacity: 0.3 }}>🔧</div>
+          <Text style={{ fontSize: 14 }}>请点击节点进行配置</Text>
         </div>
       </div>
     );
@@ -205,74 +208,80 @@ const NodeConfigPanel: React.FC = () => {
       <div
         style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #f0f0f0',
+          borderBottom: '1px solid #e2e8f0',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
         }}
       >
-        <Title level={5} style={{ margin: 0 }}>节点配置</Title>
-        <Button size="small" onClick={handleClose}>关闭</Button>
+        <div>
+          <Title level={5} style={{ margin: 0, color: '#1e293b' }}>节点配置</Title>
+          <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+            {selectedNode.type} · {selectedNode.id}
+          </Text>
+        </div>
+        <Button size="small" onClick={handleClose} style={{ borderRadius: 4 }}>关闭</Button>
       </div>
 
       {/* 配置内容 */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '20px' }}>
-        <Form form={form} layout="vertical" size="middle">
+      <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+        <Form form={form} layout="vertical" size="large">
           {/* 节点 ID */}
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
             <Text type="secondary" style={{ fontSize: 12 }}>节点 ID</Text>
-            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500 }}>
+            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
               {selectedNode.id}
             </div>
           </div>
 
           {/* 节点类型 */}
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: '#f0f9ff', borderRadius: 8, border: '1px solid #bae6fd' }}>
             <Text type="secondary" style={{ fontSize: 12 }}>节点类型</Text>
-            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500 }}>
-              {selectedNode.type}
+            <div style={{ marginTop: 4, fontSize: 14, fontWeight: 600, color: '#0369a1' }}>
+              <Tag color="blue" style={{ fontSize: 12 }}>{selectedNode.type}</Tag>
             </div>
           </div>
 
-          <Divider style={{ margin: '16px 0' }} />
+          <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
           {/* 节点名称 */}
           <Form.Item
-            label="节点名称"
+            label={<span style={{ fontWeight: 500, color: '#374151' }}>节点名称</span>}
             name="label"
             rules={[{ required: true, message: '请输入节点名称' }]}
           >
-            <Input placeholder="请输入节点名称" />
+            <Input placeholder="请输入节点名称" style={{ borderRadius: 6 }} />
           </Form.Item>
 
           {/* 输入节点配置 */}
           {selectedNode.type === 'input' && (
             <>
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
-              <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
                   输入变量配置
                 </Text>
 
                 {/* 变量名 */}
                 <Form.Item
-                  label="变量名"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>变量名</span>}
                   name="variableName"
                   initialValue="user_input"
                   rules={[{ required: true, message: '请输入变量名' }]}
                 >
-                  <Input placeholder="例如：user_input" disabled />
+                  <Input placeholder="例如：user_input" disabled style={{ borderRadius: 6, backgroundColor: '#f8fafc' }} />
                 </Form.Item>
 
                 {/* 变量类型 */}
                 <Form.Item
-                  label="变量类型"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>变量类型</span>}
                   name="variableType"
                   initialValue="String"
                   rules={[{ required: true, message: '请选择变量类型' }]}
                 >
-                  <Select disabled>
+                  <Select disabled style={{ borderRadius: 6 }}>
                     <Select.Option value="String">String</Select.Option>
                     <Select.Option value="Number">Number</Select.Option>
                     <Select.Option value="Boolean">Boolean</Select.Option>
@@ -283,7 +292,7 @@ const NodeConfigPanel: React.FC = () => {
 
                 {/* 描述 */}
                 <Form.Item
-                  label="描述"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>描述</span>}
                   name="description"
                   initialValue="用户本轮的输入内容"
                   rules={[{ required: true, message: '请输入描述' }]}
@@ -291,6 +300,7 @@ const NodeConfigPanel: React.FC = () => {
                   <TextArea
                     rows={2}
                     placeholder="例如：用户本轮的输入内容"
+                    style={{ borderRadius: 6 }}
                   />
                 </Form.Item>
 
@@ -310,34 +320,34 @@ const NodeConfigPanel: React.FC = () => {
           {/* 大模型节点配置 */}
           {selectedNode.type === 'llm' && (
             <>
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
-              <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
                   基础配置
                 </Text>
 
                 {/* 接口地址 */}
                 <Form.Item
-                  label="接口地址"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>接口地址</span>}
                   name="apiUrl"
                   rules={[{ required: true, message: '请输入接口地址' }]}
                 >
-                  <Input placeholder="例如：https://api.deepseek.com/v1/chat/completions" />
+                  <Input placeholder="例如：https://api.deepseek.com/v1/chat/completions" style={{ borderRadius: 6 }} />
                 </Form.Item>
 
                 {/* API 密钥 */}
                 <Form.Item
-                  label="API 密钥"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>API 密钥</span>}
                   name="apiKey"
                   rules={[{ required: true, message: '请输入 API 密钥' }]}
                 >
-                  <Input.Password placeholder="请输入 API 密钥" />
+                  <Input.Password placeholder="请输入 API 密钥" style={{ borderRadius: 6 }} />
                 </Form.Item>
 
                 {/* 模型选择 */}
                 <Form.Item
-                  label="模型名称"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>模型名称</span>}
                   name="model"
                   rules={[{ required: true, message: '请选择或输入模型名称' }]}
                 >
@@ -345,6 +355,7 @@ const NodeConfigPanel: React.FC = () => {
                     showSearch
                     allowClear
                     placeholder="选择或输入模型名称"
+                    style={{ borderRadius: 6 }}
                   >
                     <Select.Option value="qwen-max">通义千问-Max</Select.Option>
                     <Select.Option value="qwen-plus">通义千问-Plus</Select.Option>
@@ -358,13 +369,13 @@ const NodeConfigPanel: React.FC = () => {
 
                 {/* 温度参数 */}
                 <Form.Item
-                  label="温度 (Temperature)"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>温度 (Temperature)</span>}
                   name="temperature"
                   initialValue={0.7}
                   rules={[{ required: true, message: '请设置温度值' }]}
-                  extra="控制输出随机性，范围 0-2，值越大输出越多样"
+                  extra={<span style={{ color: '#6b7280', fontSize: 12 }}>控制输出随机性，范围 0-2，值越大输出越多样</span>}
                 >
-                  <Select>
+                  <Select style={{ borderRadius: 6 }}>
                     <Select.Option value={0}>0 - 确定性最高</Select.Option>
                     <Select.Option value={0.3}>0.3 - 较低随机性</Select.Option>
                     <Select.Option value={0.5}>0.5 - 适中</Select.Option>
@@ -376,19 +387,33 @@ const NodeConfigPanel: React.FC = () => {
                 </Form.Item>
               </div>
 
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
               {/* 输入参数配置 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <Text strong>输入参数配置</Text>
-                  <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddInputConfig}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text strong style={{ color: '#1e293b', fontSize: 14 }}>输入参数配置</Text>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddInputConfig}
+                    style={{ borderRadius: 4, background: '#3b82f6' }}
+                  >
                     添加参数
                   </Button>
                 </div>
 
                 {inputConfigs.length === 0 && (
-                  <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{
+                    color: '#94a3b8',
+                    fontSize: 13,
+                    textAlign: 'center',
+                    padding: '24px 0',
+                    background: '#f8fafc',
+                    borderRadius: 8,
+                    border: '1px dashed #cbd5e1',
+                  }}>
                     暂无输入参数，请点击"添加参数"按钮添加
                   </div>
                 )}
@@ -398,16 +423,27 @@ const NodeConfigPanel: React.FC = () => {
                     key={item.id}
                     size="small"
                     style={{
-                      marginBottom: 8,
-                      padding: '8px',
-                      background: '#fafafa',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
+                      marginBottom: 10,
+                      padding: '10px 12px',
+                      background: '#f8fafc',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
                       alignItems: 'flex-start',
                     }}
                   >
                     {/* 序号 */}
-                    <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
+                    <div style={{
+                      width: 24,
+                      height: 24,
+                      textAlign: 'center',
+                      color: '#6b7280',
+                      fontSize: 12,
+                      paddingTop: 4,
+                      fontWeight: 500,
+                      backgroundColor: '#e2e8f0',
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                    }}>
                       {index + 1}
                     </div>
 
@@ -416,7 +452,7 @@ const NodeConfigPanel: React.FC = () => {
                       placeholder="参数名"
                       value={item.paramName}
                       onChange={(e) => handleUpdateInputConfig(item.id, 'paramName', e.target.value)}
-                      style={{ width: 100 }}
+                      style={{ width: 100, borderRadius: 6 }}
                       size="small"
                     />
 
@@ -424,7 +460,7 @@ const NodeConfigPanel: React.FC = () => {
                     <Select
                       value={item.paramType}
                       onChange={(value) => handleUpdateInputConfig(item.id, 'paramType', value)}
-                      style={{ width: 80 }}
+                      style={{ width: 90, borderRadius: 6 }}
                       size="small"
                     >
                       <Select.Option value="input">直接输入</Select.Option>
@@ -437,7 +473,7 @@ const NodeConfigPanel: React.FC = () => {
                         placeholder="请输入参数值"
                         value={item.inputValue}
                         onChange={(e) => handleUpdateInputConfig(item.id, 'inputValue', e.target.value)}
-                        style={{ width: 200, flex: 1 }}
+                        style={{ width: 200, flex: 1, borderRadius: 6 }}
                         size="small"
                       />
                     ) : (
@@ -445,7 +481,7 @@ const NodeConfigPanel: React.FC = () => {
                         placeholder="选择引用节点"
                         value={item.referenceNode || undefined}
                         onChange={(value) => handleUpdateInputConfig(item.id, 'referenceNode', value)}
-                        style={{ width: 200, flex: 1 }}
+                        style={{ width: 200, flex: 1, borderRadius: 6 }}
                         size="small"
                       >
                         {getAvailableNodes().map((node) => (
@@ -468,24 +504,38 @@ const NodeConfigPanel: React.FC = () => {
                   </Space>
                 ))}
 
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 12, color: '#6b7280' }}>
                   💡 提示：参数名将在用户提示词中使用 {'{{'}参数名{'}}'} 的方式引用
                 </Text>
               </div>
 
               {/* 输出参数配置 */}
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <Text strong>输出参数配置</Text>
-                  <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddOutputParamConfig}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text strong style={{ color: '#1e293b', fontSize: 14 }}>输出参数配置</Text>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddOutputParamConfig}
+                    style={{ borderRadius: 4, background: '#3b82f6' }}
+                  >
                     添加输出参数
                   </Button>
                 </div>
 
                 {outputParamConfigs.length === 0 && (
-                  <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{
+                    color: '#94a3b8',
+                    fontSize: 13,
+                    textAlign: 'center',
+                    padding: '24px 0',
+                    background: '#f8fafc',
+                    borderRadius: 8,
+                    border: '1px dashed #cbd5e1',
+                  }}>
                     暂无输出参数，请点击"添加输出参数"按钮添加
                   </div>
                 )}
@@ -495,17 +545,28 @@ const NodeConfigPanel: React.FC = () => {
                     key={item.id}
                     size="small"
                     style={{
-                      marginBottom: 8,
-                      padding: '8px',
-                      background: '#fafafa',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
+                      marginBottom: 10,
+                      padding: '10px 12px',
+                      background: '#f8fafc',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
                       alignItems: 'flex-start',
                       width: '100%',
                     }}
                   >
                     {/* 序号 */}
-                    <div style={{ width: 24, textAlign: 'center', color: '#999', fontSize: 12, paddingTop: 4 }}>
+                    <div style={{
+                      width: 24,
+                      height: 24,
+                      textAlign: 'center',
+                      color: '#6b7280',
+                      fontSize: 12,
+                      paddingTop: 4,
+                      fontWeight: 500,
+                      backgroundColor: '#e2e8f0',
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                    }}>
                       {index + 1}
                     </div>
 
@@ -516,17 +577,18 @@ const NodeConfigPanel: React.FC = () => {
                         value={item.variableName}
                         onChange={(e) => handleUpdateOutputParamConfig(item.id, 'variableName', e.target.value)}
                         size="small"
+                        style={{ borderRadius: 6 }}
                         onClick={(e) => e.stopPropagation()}
                       />
                     </Form.Item>
 
                     {/* 变量类型 */}
-                    <Form.Item style={{ width: 100, marginBottom: 0 }}>
+                    <Form.Item style={{ width: 110, marginBottom: 0 }}>
                       <Select
                         value={item.variableType}
                         onChange={(value) => handleUpdateOutputParamConfig(item.id, 'variableType', value)}
                         size="small"
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', borderRadius: 6 }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Select.Option value="String">String</Select.Option>
@@ -544,6 +606,7 @@ const NodeConfigPanel: React.FC = () => {
                         value={item.description}
                         onChange={(e) => handleUpdateOutputParamConfig(item.id, 'description', e.target.value)}
                         size="small"
+                        style={{ borderRadius: 6 }}
                         onClick={(e) => e.stopPropagation()}
                       />
                     </Form.Item>
@@ -559,46 +622,54 @@ const NodeConfigPanel: React.FC = () => {
                   </Space>
                 ))}
 
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 12, color: '#6b7280' }}>
                   💡 提示：输出参数将作为 LLM 节点的回答结果，可供后续节点引用
                 </Text>
               </div>
 
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
-              <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
                   提示词配置
                 </Text>
 
                 {/* 系统提示词 */}
                 <Form.Item
-                  label="系统提示词"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>系统提示词</span>}
                   name="prompt"
-                  extra="设定 AI 的角色和行为规范"
+                  extra={<span style={{ color: '#6b7280', fontSize: 12 }}>设定 AI 的角色和行为规范</span>}
                 >
                   <TextArea
                     rows={4}
                     placeholder="例如：你是一位专业的广播节目编辑..."
+                    style={{ borderRadius: 6 }}
                   />
                 </Form.Item>
 
                 {/* 用户提示词 */}
                 <Form.Item
-                  label="用户提示词模板"
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>用户提示词模板</span>}
                   name="userPrompt"
-                  extra="使用 {'{{'}参数名{'}}'} 引用上面定义的参数"
+                  extra={<span style={{ color: '#6b7280', fontSize: 12 }}>使用 {'{{'}参数名{'}}'} 引用上面定义的参数</span>}
                 >
                   <TextArea
                     rows={6}
                     placeholder={`# 任务&#10;将原始内容改编为适合播客节目的逐字稿&#10;&#10;# 原始内容：{{input}}`}
+                    style={{ borderRadius: 6 }}
                   />
                 </Form.Item>
 
                 {/* 已定义的参数列表 */}
                 {inputConfigs.length > 0 && (
-                  <div style={{ background: '#f5f7fa', padding: 12, borderRadius: 6, marginBottom: 16 }}>
-                    <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                    padding: '14px 16px',
+                    borderRadius: 8,
+                    marginBottom: 16,
+                    border: '1px solid #bfdbfe',
+                  }}>
+                    <Text strong style={{ display: 'block', marginBottom: 10, color: '#1e40af' }}>
                       💡 可用参数 (点击插入)
                     </Text>
                     <Space wrap>
@@ -606,7 +677,12 @@ const NodeConfigPanel: React.FC = () => {
                         <Tag
                           key={item.id}
                           color="blue"
-                          style={{ cursor: 'pointer' }}
+                          style={{
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            padding: '4px 10px',
+                            borderRadius: 4,
+                          }}
                           onClick={() => {
                             const textarea = document.querySelector('textarea[aria-label="用户提示词模板"]') as HTMLTextAreaElement;
                             if (textarea) {
@@ -624,7 +700,7 @@ const NodeConfigPanel: React.FC = () => {
                         </Tag>
                       ))}
                     </Space>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 10, color: '#6b7280' }}>
                       点击参数标签可插入到上方提示词模板的光标位置
                     </Text>
                   </div>
@@ -636,20 +712,25 @@ const NodeConfigPanel: React.FC = () => {
           {/* 工具节点配置 */}
           {selectedNode.type === 'tool' && (
             <>
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
+
               <Form.Item
-                label="工具类型"
+                label={<span style={{ fontWeight: 500, color: '#374151' }}>工具类型</span>}
                 name="toolType"
                 rules={[{ required: true, message: '请选择工具类型' }]}
               >
-                <Select>
+                <Select style={{ borderRadius: 6 }}>
                   <Select.Option value="audio-synthesis">
                     超拟人音频合成
                   </Select.Option>
                 </Select>
               </Form.Item>
 
-              <Form.Item label="音色选择" name="voice">
-                <Select>
+              <Form.Item
+                label={<span style={{ fontWeight: 500, color: '#374151' }}>音色选择</span>}
+                name="voice"
+              >
+                <Select style={{ borderRadius: 6 }}>
                   <Select.Option value="female-1">女声 1 号</Select.Option>
                   <Select.Option value="female-2">女声 2 号</Select.Option>
                   <Select.Option value="male-1">男声 1 号</Select.Option>
@@ -662,19 +743,33 @@ const NodeConfigPanel: React.FC = () => {
           {/* 输出节点配置 */}
           {selectedNode.type === 'output' && (
             <>
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
               {/* 输出配置 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <Text strong>输出配置</Text>
-                  <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAddOutputConfig}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text strong style={{ color: '#1e293b', fontSize: 14 }}>输出配置</Text>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddOutputConfig}
+                    style={{ borderRadius: 4, background: '#3b82f6' }}
+                  >
                     添加
                   </Button>
                 </div>
 
                 {outputConfigs.length === 0 && (
-                  <div style={{ color: '#999', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{
+                    color: '#94a3b8',
+                    fontSize: 13,
+                    textAlign: 'center',
+                    padding: '24px 0',
+                    background: '#f8fafc',
+                    borderRadius: 8,
+                    border: '1px dashed #cbd5e1',
+                  }}>
                     暂无输出配置，请点击"添加"按钮添加
                   </div>
                 )}
@@ -684,11 +779,11 @@ const NodeConfigPanel: React.FC = () => {
                     key={item.id}
                     size="small"
                     style={{
-                      marginBottom: 8,
-                      padding: '8px',
-                      background: '#fafafa',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
+                      marginBottom: 10,
+                      padding: '10px 12px',
+                      background: '#f8fafc',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
                     }}
                   >
                     {/* 参数名输入框 */}
@@ -696,14 +791,14 @@ const NodeConfigPanel: React.FC = () => {
                       placeholder="参数名"
                       value={item.paramName}
                       onChange={(e) => handleUpdateOutputConfig(item.id, 'paramName', e.target.value)}
-                      style={{ width: 100 }}
+                      style={{ width: 100, borderRadius: 6 }}
                       size="small"
                     />
                     {/* 参数类型 */}
                     <Select
                       value={item.paramType}
                       onChange={(value) => handleUpdateOutputConfig(item.id, 'paramType', value)}
-                      style={{ width: 70 }}
+                      style={{ width: 80, borderRadius: 6 }}
                       size="small"
                     >
                       <Select.Option value="input">输入</Select.Option>
@@ -715,7 +810,7 @@ const NodeConfigPanel: React.FC = () => {
                         placeholder="请输入"
                         value={item.inputValue}
                         onChange={(e) => handleUpdateOutputConfig(item.id, 'inputValue', e.target.value)}
-                        style={{ width: 180 }}
+                        style={{ width: 180, borderRadius: 6 }}
                         size="small"
                       />
                     ) : (
@@ -723,7 +818,7 @@ const NodeConfigPanel: React.FC = () => {
                         placeholder="选择引用"
                         value={item.referenceNode || undefined}
                         onChange={(value) => handleUpdateOutputConfig(item.id, 'referenceNode', value)}
-                        style={{ width: 180 }}
+                        style={{ width: 180, borderRadius: 6 }}
                         size="small"
                       >
                         {getAvailableNodes().map((node) => (
@@ -746,8 +841,8 @@ const NodeConfigPanel: React.FC = () => {
               </div>
 
               {/* 回答内容配置 */}
-              <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ display: 'block', marginBottom: 8 }}>
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 12, color: '#1e293b', fontSize: 14 }}>
                   回答内容配置
                 </Text>
                 <TextArea
@@ -755,21 +850,31 @@ const NodeConfigPanel: React.FC = () => {
                   value={contentTemplate}
                   onChange={(e) => setContentTemplate(e.target.value)}
                   placeholder="使用 {{ 参数名 }} 引用上面定义的参数"
+                  style={{ borderRadius: 6 }}
                 />
-                <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 10, display: 'block', color: '#6b7280' }}>
                   💡 提示：使用 {'{{'} 参数名 {'}}'} 引用上面定义的参数，例如：{`{{output}}`}
                 </Text>
               </div>
 
               {/* 已定义的参数列表 */}
               {outputConfigs.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                <div style={{ marginBottom: 20 }}>
+                  <Text strong style={{ display: 'block', marginBottom: 12, color: '#1e293b', fontSize: 14 }}>
                     已定义的参数
                   </Text>
                   <Space wrap>
                     {outputConfigs.map((item) => (
-                      <Tag key={item.id} color="blue" style={{ cursor: 'pointer' }}>
+                      <Tag
+                        key={item.id}
+                        color="blue"
+                        style={{
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          padding: '4px 10px',
+                          borderRadius: 4,
+                        }}
+                      >
                         {`{{${item.paramName || '未命名'}}}`}
                       </Tag>
                     ))}
@@ -785,11 +890,24 @@ const NodeConfigPanel: React.FC = () => {
       <div
         style={{
           padding: '16px 20px',
-          borderTop: '1px solid #f0f0f0',
-          backgroundColor: '#fafafa',
+          borderTop: '1px solid #e2e8f0',
+          backgroundColor: '#f8fafc',
         }}
       >
-        <Button type="primary" block size="large" onClick={handleSave}>
+        <Button
+          type="primary"
+          block
+          size="large"
+          onClick={handleSave}
+          style={{
+            borderRadius: 8,
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            border: 'none',
+            height: 44,
+            fontSize: 15,
+          }}
+        >
           保存配置
         </Button>
       </div>

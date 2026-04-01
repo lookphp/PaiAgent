@@ -100,16 +100,21 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
       open={debugDrawerOpen}
       onClose={() => setDebugDrawerOpen(false)}
       footer={null}
+      styles={{
+        body: { padding: '20px' },
+        header: { borderBottom: '1px solid #e8e8e8' },
+      }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         <div>
-          <Title level={5}>输入测试文本</Title>
+          <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>输入测试文本</Title>
           <TextArea
             rows={4}
             value={debugInput}
             onChange={(e) => setDebugInput(e.target.value)}
             placeholder="请输入要测试的文本内容..."
             disabled={isExecuting}
+            style={{ borderRadius: 8 }}
           />
         </div>
 
@@ -120,16 +125,17 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           disabled={!debugInput.trim() || isExecuting}
           block
           size="large"
+          style={{ borderRadius: 8, fontWeight: 500 }}
         >
           {isExecuting ? '执行中...' : '运行工作流'}
         </Button>
 
-        <Divider />
+        <Divider style={{ margin: '8px 0 16px' }} />
 
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Title level={5} style={{ margin: 0 }}>执行日志</Title>
-            <Button size="small" onClick={handleClearLogs}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Title level={5} style={{ margin: 0, color: '#1e40af' }}>执行日志</Title>
+            <Button size="small" onClick={handleClearLogs} style={{ borderRadius: 4 }}>
               清空
             </Button>
           </div>
@@ -137,21 +143,36 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
             style={{
               height: 300,
               overflow: 'auto',
-              border: '1px solid #e8e8e8',
-              borderRadius: 6,
+              border: '1px solid #e5e7eb',
+              borderRadius: 8,
               padding: 12,
-              backgroundColor: '#fafafa',
+              backgroundColor: '#f9fafb',
               fontFamily: 'monospace',
               fontSize: 12,
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)',
             }}
           >
             {executionLogs.length === 0 ? (
-              <Text type="secondary">暂无日志</Text>
+              <Text type="secondary" style={{ color: '#9ca3af' }}>暂无日志</Text>
             ) : (
               executionLogs.map((log, index) => (
-                <div key={index} style={{ marginBottom: 4 }}>
-                  <Text code>{`[${log.timestamp}]`}</Text>{' '}
-                  {log.message}
+                <div
+                  key={index}
+                  style={{
+                    marginBottom: 6,
+                    paddingBottom: 6,
+                    borderBottom: index < executionLogs.length - 1 ? '1px dashed #e5e7eb' : 'none',
+                  }}
+                >
+                  <Text code style={{
+                    backgroundColor: '#e0f2fe',
+                    color: '#0369a1',
+                    border: 'none',
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    fontSize: 11,
+                  }}>{`[${log.timestamp}]`}</Text>{' '}
+                  <span style={{ color: '#374151' }}>{log.message}</span>
                 </div>
               ))
             )}
@@ -165,28 +186,29 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
 
         {executionResult?.audioUrl && (
           <div>
-            <Title level={5}>音频输出</Title>
+            <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>音频输出</Title>
             <audio
               controls
               src={executionResult.audioUrl}
-              style={{ width: '100%' }}
+              style={{ width: '100%', borderRadius: 8 }}
             />
           </div>
         )}
 
         {executionResult?.success && executionResult?.output && (
           <div>
-            <Title level={5}>执行结果</Title>
+            <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>执行结果</Title>
             <div
               style={{
-                padding: 12,
-                border: '1px solid #e8e8e8',
-                borderRadius: 6,
-                backgroundColor: '#f6ffed',
+                padding: 16,
+                border: '1px solid #86efac',
+                borderRadius: 8,
+                backgroundColor: '#f0fdf4',
                 fontFamily: 'monospace',
                 fontSize: 13,
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
               }}
             >
               {executionResult.output}
@@ -196,18 +218,19 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
 
         {executionResult?.error && (
           <div>
-            <Title level={5} style={{ color: '#ff4d4f' }}>错误信息</Title>
+            <Title level={5} style={{ marginBottom: 12, color: '#dc2626' }}>错误信息</Title>
             <div
               style={{
-                padding: 12,
-                border: '1px solid #ffccc7',
-                borderRadius: 6,
-                backgroundColor: '#fff2f0',
-                color: '#ff4d4f',
+                padding: 16,
+                border: '1px solid #fca5a5',
+                borderRadius: 8,
+                backgroundColor: '#fef2f2',
+                color: '#dc2626',
                 fontFamily: 'monospace',
                 fontSize: 13,
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
               }}
             >
               {executionResult.error}
