@@ -36,7 +36,20 @@ export const workflowApi = {
 
   // 执行工作流
   execute: async (request: ExecutionRequest): Promise<ExecutionResponse> => {
-    const response = await api.post<ExecutionResponse>('/execution', request);
+    // 如果有 workflowId 且不是 0，使用标准执行端点
+    if (request.workflowId && request.workflowId !== 0) {
+      const response = await api.post<ExecutionResponse>('/execution', {
+        workflowId: request.workflowId,
+        input: request.input,
+      });
+      return response.data;
+    }
+    // 否则使用快速执行端点，传递节点和边
+    const response = await api.post<ExecutionResponse>('/execution/quick', {
+      workflowId: 0,
+      input: request.input,
+      parameters: request.parameters,
+    });
     return response.data;
   },
 };

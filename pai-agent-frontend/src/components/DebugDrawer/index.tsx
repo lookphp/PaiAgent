@@ -26,6 +26,8 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
     addExecutionLog,
     setExecutionResult,
     currentWorkflow,
+    nodes,
+    edges,
   } = useWorkflowStore();
 
   const handleRun = async () => {
@@ -42,7 +44,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
 
     try {
       // 如果有保存的工作流，使用工作流 ID 执行
-      // 否则使用当前画布上的节点和边执行
+      // 否则使用快速执行模式，传递当前画布的节点和边
       let response;
       if (currentWorkflow?.id) {
         response = await workflowApi.execute({
@@ -50,10 +52,14 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           input: debugInput,
         });
       } else {
-        // 快速执行模式
+        // 快速执行模式 - 使用当前画布的节点和边
         response = await workflowApi.execute({
           workflowId: 0,
           input: debugInput,
+          parameters: {
+            nodes: JSON.stringify(nodes),
+            edges: JSON.stringify(edges),
+          },
         });
       }
 
