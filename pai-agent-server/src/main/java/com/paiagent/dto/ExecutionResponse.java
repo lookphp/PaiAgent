@@ -17,10 +17,10 @@ public class ExecutionResponse {
     private boolean success;
     private String output;
     private String audioUrl;
-    private List<String> logs;
+    private List<?> logs;
     private String error;
 
-    public static ExecutionResponse success(String output, String audioUrl, List<String> logs) {
+    public static ExecutionResponse success(String output, String audioUrl, List<?> logs) {
         return new ExecutionResponse(true, output, audioUrl, logs, null);
     }
 

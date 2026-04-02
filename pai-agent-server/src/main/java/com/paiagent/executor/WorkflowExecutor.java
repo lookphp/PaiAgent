@@ -26,6 +26,7 @@ public class WorkflowExecutor {
      * 执行工作流
      */
     public ExecutionResult executeWorkflow(String nodesJson, String edgesJson, String input) {
+        long workflowStartTime = System.currentTimeMillis();
         try {
             List<Map<String, Object>> nodes = parseNodes(nodesJson);
             List<Map<String, Object>> edges = parseEdges(edgesJson);
@@ -47,6 +48,8 @@ public class WorkflowExecutor {
                     .logs(new ArrayList<>())
                     .build();
 
+            context.addLog("工作流开始执行，共 " + sortedNodes.size() + " 个节点");
+
             Map<String, NodeExecutionResult> results = new HashMap<>();
 
             for (String nodeId : sortedNodes) {
@@ -59,12 +62,20 @@ public class WorkflowExecutor {
                 NodeExecutor executor = findExecutorByNodeType(nodeType);
 
                 if (executor == null) {
-                    return ExecutionResult.error("未找到节点类型 '" + nodeType + "' 的执行器");
+                    return ExecutionResult.error("未找到节点类型 '" + nodeType + "' 的执行器", context.getLogs());
                 }
 
                 @SuppressWarnings("unchecked")
                 Map<String, Object> nodeData = (Map<String, Object>) node.get("data");
+
+                // 记录节点开始执行
+                context.startStep(nodeType);
+
                 NodeExecutionResult result = executor.execute(context, nodeData != null ? nodeData : new HashMap<>());
+
+                // 记录节点执行完成
+                String resultSummary = result.isSuccess() ? "成功" : "失败";
+                context.endStep(nodeType, resultSummary);
 
                 results.put(nodeId, result);
 
@@ -78,6 +89,9 @@ public class WorkflowExecutor {
                     context.getVariables().putAll(result.getData());
                 }
             }
+
+            long totalDuration = System.currentTimeMillis() - workflowStartTime;
+            context.addLog("工作流执行完成，总耗时: " + totalDuration + "ms");
 
             return ExecutionResult.success(
                     context.getStringVariable("lastOutput"),
@@ -181,10 +195,10 @@ public class WorkflowExecutor {
         private boolean success;
         private String output;
         private String audioUrl;
-        private List<String> logs;
+        private List<ExecutionContext.LogEntry> logs;
         private String error;
 
-        public static ExecutionResult success(String output, String audioUrl, List<String> logs) {
+        public static ExecutionResult success(String output, String audioUrl, List<ExecutionContext.LogEntry> logs) {
             return ExecutionResult.builder()
                     .success(true)
                     .output(output)
@@ -193,7 +207,7 @@ public class WorkflowExecutor {
                     .build();
         }
 
-        public static ExecutionResult error(String error, List<String> logs) {
+        public static ExecutionResult error(String error, List<ExecutionContext.LogEntry> logs) {
             return ExecutionResult.builder()
                     .success(false)
                     .error(error)

@@ -5,6 +5,8 @@ import lombok.Data;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 执行上下文
@@ -29,13 +31,63 @@ public class ExecutionContext {
      * 执行日志
      */
     @Builder.Default
-    private java.util.List<String> logs = new java.util.ArrayList<>();
+    private List<LogEntry> logs = new ArrayList<>();
 
     /**
-     * 添加日志
+     * 当前步骤开始时间
      */
-    public void addLog(String log) {
-        logs.add(log);
+    private long stepStartTime;
+
+    /**
+     * 日志条目
+     */
+    @lombok.Data
+    public static class LogEntry {
+        private String message;
+        private long durationMs;
+        private String nodeType;
+
+        public LogEntry(String message, long durationMs, String nodeType) {
+            this.message = message;
+            this.durationMs = durationMs;
+            this.nodeType = nodeType;
+        }
+
+        public LogEntry(String message) {
+            this.message = message;
+            this.durationMs = 0;
+            this.nodeType = null;
+        }
+    }
+
+    /**
+     * 开始计时
+     */
+    public void startStep(String nodeType) {
+        this.stepStartTime = System.currentTimeMillis();
+        addLog("开始执行 " + nodeType + " 节点...");
+    }
+
+    /**
+     * 结束计时并添加日志
+     */
+    public void endStep(String nodeType, String resultSummary) {
+        long duration = System.currentTimeMillis() - this.stepStartTime;
+        addLog("完成 " + nodeType + " 节点: " + resultSummary + " (耗时: " + duration + "ms)", duration, nodeType);
+    }
+
+    /**
+     * 添加日志（带耗时）
+     */
+    public void addLog(String message, long durationMs, String nodeType) {
+        logs.add(new LogEntry(message, durationMs, nodeType));
+    }
+
+    /**
+     * 添加日志（不带耗时）
+     */
+    public void addLog(String message) {
+        logs.add(new LogEntry(message));
     }
 
     /**
@@ -58,5 +110,15 @@ public class ExecutionContext {
     public String getStringVariable(String key) {
         Object value = variables.get(key);
         return value != null ? value.toString() : null;
+    }
+
+    /**
+     * 获取总耗时
+     */
+    public long getTotalDuration() {
+        return logs.stream()
+                .filter(log -> log.getDurationMs() > 0)
+                .mapToLong(LogEntry::getDurationMs)
+                .sum();
     }
 }

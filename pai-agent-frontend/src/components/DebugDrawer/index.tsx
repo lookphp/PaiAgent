@@ -37,8 +37,8 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
     setExecutionResult(null);
 
     // 清空之前的日志
-    addExecutionLog(`开始执行工作流...`);
-    addExecutionLog(`输入内容：${debugInput}`);
+    addExecutionLog({ message: '开始执行工作流...' });
+    addExecutionLog({ message: `输入内容：${debugInput}` });
 
     try {
       // 如果有保存的工作流，使用工作流 ID 执行
@@ -58,8 +58,19 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
       }
 
       if (response.success) {
-        response.logs?.forEach((log: string) => addExecutionLog(log));
-        addExecutionLog('执行完成！');
+        // 处理日志，每条日志可能包含 durationMs 和 nodeType
+        response.logs?.forEach((log: any) => {
+          if (typeof log === 'string') {
+            addExecutionLog({ message: log });
+          } else {
+            addExecutionLog({
+              message: log.message,
+              durationMs: log.durationMs,
+              nodeType: log.nodeType,
+            });
+          }
+        });
+        addExecutionLog({ message: '执行完成！' });
         setExecutionResult({
           success: true,
           output: response.output,
@@ -67,14 +78,14 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           logs: response.logs,
         });
       } else {
-        addExecutionLog(`执行失败：${response.error}`);
+        addExecutionLog({ message: `执行失败：${response.error}` });
         setExecutionResult({
           success: false,
           error: response.error,
         });
       }
     } catch (error: any) {
-      addExecutionLog(`执行错误：${error.message || '未知错误'}`);
+      addExecutionLog({ message: `执行错误：${error.message || '未知错误'}` });
       setExecutionResult({
         success: false,
         error: error.message,
@@ -159,9 +170,12 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                 <div
                   key={index}
                   style={{
-                    marginBottom: 6,
-                    paddingBottom: 6,
+                    marginBottom: 8,
+                    paddingBottom: 8,
                     borderBottom: index < executionLogs.length - 1 ? '1px dashed #e5e7eb' : 'none',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 8,
                   }}
                 >
                   <Text code style={{
@@ -171,8 +185,30 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                     padding: '2px 6px',
                     borderRadius: 4,
                     fontSize: 11,
-                  }}>{`[${log.timestamp}]`}</Text>{' '}
-                  <span style={{ color: '#374151' }}>{log.message}</span>
+                    whiteSpace: 'nowrap',
+                  }}>{`[${log.timestamp}]`}</Text>
+
+                  {log.durationMs && log.durationMs > 0 && (
+                    <Text code style={{
+                      backgroundColor: log.nodeType === 'llm' ? '#fef3c7' :
+                                      log.nodeType === 'tool' ? '#fce7f3' :
+                                      log.nodeType === 'input' ? '#dcfce7' :
+                                      log.nodeType === 'output' ? '#dbeafe' : '#f3f4f6',
+                      color: log.nodeType === 'llm' ? '#d97706' :
+                            log.nodeType === 'tool' ? '#db2777' :
+                            log.nodeType === 'input' ? '#16a34a' :
+                            log.nodeType === 'output' ? '#2563eb' : '#6b7280',
+                      border: 'none',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      fontSize: 11,
+                      whiteSpace: 'nowrap',
+                    }}>{`${log.durationMs}ms`}</Text>
+                  )}
+
+                  <span style={{ color: '#374151', fontSize: 12, lineHeight: 1.5 }}>
+                    {log.message}
+                  </span>
                 </div>
               ))
             )}
