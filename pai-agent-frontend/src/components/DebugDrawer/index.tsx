@@ -1,5 +1,5 @@
 import React from 'react';
-import { Drawer, Input, Button, Divider, Typography, Spin } from 'antd';
+import { Drawer, Input, Button, Divider, Typography, Spin, Tag } from 'antd';
 import {
   PlayCircleOutlined,
   BugOutlined,
@@ -64,7 +64,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
       }
 
       if (response.success) {
-        // 处理日志，每条日志可能包含 durationMs 和 nodeType
+        // 处理日志，每条日志可能包含 durationMs、nodeType、nodeId、nodeLabel、output
         response.logs?.forEach((log: any) => {
           if (typeof log === 'string') {
             addExecutionLog({ message: log });
@@ -73,6 +73,9 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
               message: log.message,
               durationMs: log.durationMs,
               nodeType: log.nodeType,
+              nodeId: log.nodeId,
+              nodeLabel: log.nodeLabel,
+              output: log.output,
             });
           }
         });
@@ -182,6 +185,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: 8,
+                    flexWrap: 'wrap',
                   }}
                 >
                   <Text code style={{
@@ -212,7 +216,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                     }}>{`${log.durationMs}ms`}</Text>
                   )}
 
-                  <span style={{ color: '#374151', fontSize: 12, lineHeight: 1.5 }}>
+                  <span style={{ color: '#374151', fontSize: 12, lineHeight: 1.5, flex: 1 }}>
                     {log.message}
                   </span>
                 </div>
@@ -225,6 +229,57 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
             )}
           </div>
         </div>
+
+        {/* 节点输出详情 */}
+        {executionLogs.some(log => log.output) && (
+          <div>
+            <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>节点输出</Title>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {executionLogs.filter(log => log.output).map((log, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: 12,
+                    background: '#f8fafc',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <Tag color={
+                      log.nodeType === 'llm' ? 'gold' :
+                      log.nodeType === 'tool' ? 'magenta' :
+                      log.nodeType === 'input' ? 'green' :
+                      log.nodeType === 'output' ? 'blue' : 'default'
+                    }>
+                      {log.nodeType}
+                    </Tag>
+                    <Text strong style={{ fontSize: 13 }}>{log.nodeLabel || log.nodeType}</Text>
+                    {log.durationMs && log.durationMs > 0 && (
+                      <Text type="secondary" style={{ fontSize: 11 }}>{log.durationMs}ms</Text>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      padding: 12,
+                      background: '#fff',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      maxHeight: 200,
+                      overflow: 'auto',
+                    }}
+                  >
+                    {log.output}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 执行结果 - 文本和音频并列显示 */}
         {executionResult?.success && (executionResult?.output || executionResult?.audioUrl) && (

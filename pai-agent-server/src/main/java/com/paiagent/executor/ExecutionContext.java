@@ -46,11 +46,23 @@ public class ExecutionContext {
         private String message;
         private long durationMs;
         private String nodeType;
+        private String nodeId;
+        private String nodeLabel;
+        private String output;
 
         public LogEntry(String message, long durationMs, String nodeType) {
             this.message = message;
             this.durationMs = durationMs;
             this.nodeType = nodeType;
+        }
+
+        public LogEntry(String message, long durationMs, String nodeType, String nodeId, String nodeLabel, String output) {
+            this.message = message;
+            this.durationMs = durationMs;
+            this.nodeType = nodeType;
+            this.nodeId = nodeId;
+            this.nodeLabel = nodeLabel;
+            this.output = output;
         }
 
         public LogEntry(String message) {
@@ -69,11 +81,14 @@ public class ExecutionContext {
     }
 
     /**
-     * 结束计时并添加日志
+     * 结束计时并添加日志（带节点输出）
      */
-    public void endStep(String nodeType, String resultSummary) {
+    public void endStep(String nodeType, String nodeId, String nodeLabel, String output) {
         long duration = System.currentTimeMillis() - this.stepStartTime;
-        addLog("完成 " + nodeType + " 节点: " + resultSummary + " (耗时: " + duration + "ms)", duration, nodeType);
+        String summary = output != null && output.length() > 100
+            ? output.substring(0, 100) + "..."
+            : (output != null ? output : "完成");
+        addLog("完成 " + nodeType + " 节点: " + nodeLabel, duration, nodeType, nodeId, nodeLabel, output);
     }
 
     /**
@@ -81,6 +96,13 @@ public class ExecutionContext {
      */
     public void addLog(String message, long durationMs, String nodeType) {
         logs.add(new LogEntry(message, durationMs, nodeType));
+    }
+
+    /**
+     * 添加日志（带节点输出）
+     */
+    public void addLog(String message, long durationMs, String nodeType, String nodeId, String nodeLabel, String output) {
+        logs.add(new LogEntry(message, durationMs, nodeType, nodeId, nodeLabel, output));
     }
 
     /**

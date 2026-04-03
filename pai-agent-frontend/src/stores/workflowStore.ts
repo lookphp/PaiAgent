@@ -13,7 +13,7 @@ interface WorkflowState {
 
   // 执行状态
   isExecuting: boolean;
-  executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string }[];
+  executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string }[];
   executionResult: ExecutionResponse | null;
 
   // 调试抽屉状态
@@ -41,7 +41,7 @@ interface WorkflowState {
 
   // Actions - 执行
   setIsExecuting: (executing: boolean) => void;
-  addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string }) => void;
+  addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string }) => void;
   setExecutionResult: (result: ExecutionResponse | null) => void;
 
   // Actions - 调试抽屉
@@ -204,6 +204,9 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         message: log.message,
         durationMs: log.durationMs,
         nodeType: log.nodeType,
+        nodeId: log.nodeId,
+        nodeLabel: log.nodeLabel,
+        output: log.output,
       }],
     }));
   },

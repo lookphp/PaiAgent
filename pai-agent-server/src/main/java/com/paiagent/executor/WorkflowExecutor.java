@@ -67,15 +67,15 @@ public class WorkflowExecutor {
 
                 @SuppressWarnings("unchecked")
                 Map<String, Object> nodeData = (Map<String, Object>) node.get("data");
+                String nodeLabel = nodeData != null ? (String) nodeData.get("label") : nodeType;
 
                 // 记录节点开始执行
                 context.startStep(nodeType);
 
                 NodeExecutionResult result = executor.execute(context, nodeData != null ? nodeData : new HashMap<>());
 
-                // 记录节点执行完成
-                String resultSummary = result.isSuccess() ? "成功" : "失败";
-                context.endStep(nodeType, resultSummary);
+                // 记录节点执行完成（包含输出）
+                context.endStep(nodeType, nodeId, nodeLabel, result.getOutput());
 
                 results.put(nodeId, result);
 

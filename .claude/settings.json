@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(lsof -ti:8080)",
+      "Bash(lsof -ti:5173)",
+      "Bash(lsof -ti:5178)",
+      "Bash(curl -X POST http://localhost:8080/api/execution -H \"Content-Type: application/json\" -d '{:*)",
+      "Bash(curl -X POST http://localhost:8080/api/workflows -H \"Content-Type: application/json\" -d '{:*)",
+      "Read(//private/tmp/**)",
+      "Bash(javac -version)",
+      "Bash(curl -s -X POST http://localhost:8080/api/execution -H \"Content-Type: application/json\" -d '{:*)"
+    ]
+  }
+}
