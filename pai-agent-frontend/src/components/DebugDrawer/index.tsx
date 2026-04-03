@@ -226,34 +226,100 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           </div>
         </div>
 
-        {executionResult?.audioUrl && (
-          <div>
-            <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>音频输出</Title>
-            <audio
-              controls
-              src={executionResult.audioUrl}
-              style={{ width: '100%', borderRadius: 8 }}
-            />
-          </div>
-        )}
-
-        {executionResult?.success && executionResult?.output && (
+        {/* 执行结果 - 文本和音频并列显示 */}
+        {executionResult?.success && (executionResult?.output || executionResult?.audioUrl) && (
           <div>
             <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>执行结果</Title>
-            <div
-              style={{
-                padding: 16,
-                border: '1px solid #86efac',
-                borderRadius: 8,
-                backgroundColor: '#f0fdf4',
-                fontFamily: 'monospace',
-                fontSize: 13,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-              }}
-            >
-              {executionResult.output}
+            <div style={{
+              display: 'flex',
+              gap: 16,
+              flexDirection: executionResult?.audioUrl ? 'row' : 'column',
+            }}>
+              {/* 文本输出 */}
+              {executionResult?.output && (
+                <div style={{
+                  flex: executionResult?.audioUrl ? 1 : 'none',
+                  minWidth: executionResult?.audioUrl ? 200 : 'auto',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                    gap: 8,
+                  }}>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: '#16a34a',
+                      background: '#dcfce7',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                    }}>📝 文本内容</span>
+                  </div>
+                  <div
+                    style={{
+                      padding: 16,
+                      border: '1px solid #86efac',
+                      borderRadius: 8,
+                      backgroundColor: '#f0fdf4',
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      maxHeight: 300,
+                      overflow: 'auto',
+                    }}
+                  >
+                    {executionResult.output}
+                  </div>
+                </div>
+              )}
+
+              {/* 音频输出 */}
+              {executionResult?.audioUrl && (
+                <div style={{
+                  flex: executionResult?.output ? 1 : 'none',
+                  minWidth: executionResult?.output ? 200 : 'auto',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                    gap: 8,
+                  }}>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: '#2563eb',
+                      background: '#dbeafe',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                    }}>🎵 音频播放</span>
+                  </div>
+                  <div
+                    style={{
+                      padding: 16,
+                      border: '1px solid #93c5fd',
+                      borderRadius: 8,
+                      backgroundColor: '#eff6ff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: 120,
+                    }}
+                  >
+                    <audio
+                      controls
+                      src={executionResult.audioUrl}
+                      style={{ width: '100%', borderRadius: 8 }}
+                    />
+                    <Text type="secondary" style={{ fontSize: 12, marginTop: 8, color: '#6b7280' }}>
+                      点击播放按钮收听合成音频
+                    </Text>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
