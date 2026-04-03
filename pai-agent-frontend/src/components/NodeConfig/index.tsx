@@ -29,6 +29,13 @@ const NodeConfigPanel: React.FC = () => {
     languageType: 'Auto',
   });
 
+  // 工具节点输出参数配置
+  const [toolOutputConfig, setToolOutputConfig] = useState<{
+    voiceUrl: string;
+  }>({
+    voiceUrl: '',
+  });
+
   // 获取可用的引用节点（除当前 LLM 节点外的所有节点）
   const getAvailableNodes = () => {
     if (!selectedNode) return [];
@@ -139,6 +146,10 @@ const NodeConfigPanel: React.FC = () => {
       if (data.toolInputConfig) {
         setToolInputConfig(data.toolInputConfig);
       }
+      // 加载工具节点输出参数配置
+      if (data.toolOutputConfig) {
+        setToolOutputConfig(data.toolOutputConfig);
+      }
     } else {
       form.resetFields();
       setOutputConfigs([]);
@@ -151,6 +162,9 @@ const NodeConfigPanel: React.FC = () => {
         textReferenceNode: '',
         voice: 'Cherry',
         languageType: 'Auto',
+      });
+      setToolOutputConfig({
+        voiceUrl: '',
       });
     }
   }, [selectedNode, form]);
@@ -172,6 +186,7 @@ const NodeConfigPanel: React.FC = () => {
         // 保存工具节点输入参数配置
         if (selectedNode.type === 'tool') {
           updatedData.toolInputConfig = toolInputConfig;
+          updatedData.toolOutputConfig = toolOutputConfig;
         }
         updateNode(selectedNode.id, updatedData);
         setSelectedNode(null);
@@ -881,6 +896,38 @@ const NodeConfigPanel: React.FC = () => {
                   >
                     <Select.Option value="Auto">Auto</Select.Option>
                   </Select>
+                </div>
+              </div>
+
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
+
+              {/* 输出参数配置 */}
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
+                  输出参数配置
+                </Text>
+
+                {/* voice_url 参数 */}
+                <div style={{
+                  marginBottom: 16,
+                  padding: '12px 16px',
+                  background: '#f8fafc',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <Tag color="orange" style={{ marginRight: 8 }}>voice_url</Tag>
+                    <Text type="secondary" style={{ fontSize: 12 }}>合成音频的 URL 地址</Text>
+                  </div>
+                  <Input
+                    value={toolOutputConfig.voiceUrl}
+                    onChange={(e) => setToolOutputConfig({ ...toolOutputConfig, voiceUrl: e.target.value })}
+                    placeholder="音频输出 URL 变量名"
+                    style={{ borderRadius: 6 }}
+                  />
+                  <Text type="secondary" style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, display: 'block' }}>
+                    用于存储合成后的音频 URL，可供后续节点引用
+                  </Text>
                 </div>
               </div>
             </>
