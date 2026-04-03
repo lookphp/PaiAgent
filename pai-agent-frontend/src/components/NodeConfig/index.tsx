@@ -14,6 +14,21 @@ const NodeConfigPanel: React.FC = () => {
   const [outputParamConfigs, setOutputParamConfigs] = useState<any[]>([]);
   const [contentTemplate, setContentTemplate] = useState<string>('');
 
+  // 工具节点输入参数配置
+  const [toolInputConfig, setToolInputConfig] = useState<{
+    textType: 'input' | 'reference';
+    textValue: string;
+    textReferenceNode: string;
+    voice: string;
+    languageType: string;
+  }>({
+    textType: 'input',
+    textValue: '',
+    textReferenceNode: '',
+    voice: 'Cherry',
+    languageType: 'Auto',
+  });
+
   // 获取可用的引用节点（除当前 LLM 节点外的所有节点）
   const getAvailableNodes = () => {
     if (!selectedNode) return [];
@@ -120,12 +135,23 @@ const NodeConfigPanel: React.FC = () => {
       if (data.outputParamConfigs) {
         setOutputParamConfigs(data.outputParamConfigs);
       }
+      // 加载工具节点输入参数配置
+      if (data.toolInputConfig) {
+        setToolInputConfig(data.toolInputConfig);
+      }
     } else {
       form.resetFields();
       setOutputConfigs([]);
       setInputConfigs([]);
       setOutputParamConfigs([]);
       setContentTemplate('');
+      setToolInputConfig({
+        textType: 'input',
+        textValue: '',
+        textReferenceNode: '',
+        voice: 'Cherry',
+        languageType: 'Auto',
+      });
     }
   }, [selectedNode, form]);
 
@@ -142,6 +168,10 @@ const NodeConfigPanel: React.FC = () => {
         if (selectedNode.type === 'llm') {
           updatedData.inputConfigs = inputConfigs;
           updatedData.outputParamConfigs = outputParamConfigs;
+        }
+        // 保存工具节点输入参数配置
+        if (selectedNode.type === 'tool') {
+          updatedData.toolInputConfig = toolInputConfig;
         }
         updateNode(selectedNode.id, updatedData);
         setSelectedNode(null);
@@ -756,23 +786,102 @@ const NodeConfigPanel: React.FC = () => {
 
               <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
+              {/* 输入参数配置 */}
               <div style={{ marginBottom: 20 }}>
                 <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
-                  音色配置
+                  输入参数配置
                 </Text>
 
-                {/* 音色选择 */}
-                <Form.Item
-                  label={<span style={{ fontWeight: 500, color: '#374151' }}>音色选择</span>}
-                  name="voice"
-                >
-                  <Select style={{ borderRadius: 6 }}>
-                    <Select.Option value="female-1">女声 1 号</Select.Option>
-                    <Select.Option value="female-2">女声 2 号</Select.Option>
-                    <Select.Option value="male-1">男声 1 号</Select.Option>
-                    <Select.Option value="male-2">男声 2 号</Select.Option>
+                {/* text 参数 */}
+                <div style={{
+                  marginBottom: 16,
+                  padding: '12px 16px',
+                  background: '#f8fafc',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <Tag color="blue" style={{ marginRight: 8 }}>text</Tag>
+                    <Text type="secondary" style={{ fontSize: 12 }}>待合成的文本内容</Text>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <Select
+                      value={toolInputConfig.textType}
+                      onChange={(value) => setToolInputConfig({ ...toolInputConfig, textType: value })}
+                      style={{ width: 100, borderRadius: 6 }}
+                    >
+                      <Select.Option value="input">直接输入</Select.Option>
+                      <Select.Option value="reference">引用节点</Select.Option>
+                    </Select>
+                    {toolInputConfig.textType === 'input' ? (
+                      <TextArea
+                        value={toolInputConfig.textValue}
+                        onChange={(e) => setToolInputConfig({ ...toolInputConfig, textValue: e.target.value })}
+                        placeholder="请输入要合成的文本内容"
+                        rows={3}
+                        style={{ flex: 1, borderRadius: 6 }}
+                      />
+                    ) : (
+                      <Select
+                        value={toolInputConfig.textReferenceNode || undefined}
+                        onChange={(value) => setToolInputConfig({ ...toolInputConfig, textReferenceNode: value })}
+                        placeholder="选择引用节点"
+                        style={{ flex: 1, borderRadius: 6 }}
+                        allowClear
+                      >
+                        {getAvailableNodes().map((node) => (
+                          <Select.Option key={node.id} value={node.id}>
+                            {node.label} ({node.type})
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    )}
+                  </div>
+                </div>
+
+                {/* voice 参数 */}
+                <div style={{
+                  marginBottom: 16,
+                  padding: '12px 16px',
+                  background: '#f8fafc',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <Tag color="purple" style={{ marginRight: 8 }}>voice</Tag>
+                    <Text type="secondary" style={{ fontSize: 12 }}>音色选择</Text>
+                  </div>
+                  <Select
+                    value={toolInputConfig.voice}
+                    onChange={(value) => setToolInputConfig({ ...toolInputConfig, voice: value })}
+                    style={{ width: '100%', borderRadius: 6 }}
+                  >
+                    <Select.Option value="Cherry">Cherry</Select.Option>
+                    <Select.Option value="Serena">Serena</Select.Option>
+                    <Select.Option value="Ethan">Ethan</Select.Option>
                   </Select>
-                </Form.Item>
+                </div>
+
+                {/* language_type 参数 */}
+                <div style={{
+                  marginBottom: 16,
+                  padding: '12px 16px',
+                  background: '#f8fafc',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <Tag color="green" style={{ marginRight: 8 }}>language_type</Tag>
+                    <Text type="secondary" style={{ fontSize: 12 }}>语言类型</Text>
+                  </div>
+                  <Select
+                    value={toolInputConfig.languageType}
+                    onChange={(value) => setToolInputConfig({ ...toolInputConfig, languageType: value })}
+                    style={{ width: '100%', borderRadius: 6 }}
+                  >
+                    <Select.Option value="Auto">Auto</Select.Option>
+                  </Select>
+                </div>
               </div>
             </>
           )}
