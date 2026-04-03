@@ -89,7 +89,7 @@ const NodeConfigPanel: React.FC = () => {
     if (selectedNode) {
       form.setFieldsValue({
         label: selectedNode.data?.label,
-        model: selectedNode.data?.model,
+        model: selectedNode.data?.model || (selectedNode.type === 'tool' ? 'qwen3-tts-flash' : undefined),
         apiUrl: selectedNode.data?.apiUrl,
         apiKey: selectedNode.data?.apiKey,
         temperature: selectedNode.data?.temperature !== undefined ? selectedNode.data?.temperature : 0.7,
@@ -714,29 +714,66 @@ const NodeConfigPanel: React.FC = () => {
             <>
               <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
 
-              <Form.Item
-                label={<span style={{ fontWeight: 500, color: '#374151' }}>工具类型</span>}
-                name="toolType"
-                rules={[{ required: true, message: '请选择工具类型' }]}
-              >
-                <Select style={{ borderRadius: 6 }}>
-                  <Select.Option value="audio-synthesis">
-                    超拟人音频合成
-                  </Select.Option>
-                </Select>
-              </Form.Item>
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
+                  基础配置
+                </Text>
 
-              <Form.Item
-                label={<span style={{ fontWeight: 500, color: '#374151' }}>音色选择</span>}
-                name="voice"
-              >
-                <Select style={{ borderRadius: 6 }}>
-                  <Select.Option value="female-1">女声 1 号</Select.Option>
-                  <Select.Option value="female-2">女声 2 号</Select.Option>
-                  <Select.Option value="male-1">男声 1 号</Select.Option>
-                  <Select.Option value="male-2">男声 2 号</Select.Option>
-                </Select>
-              </Form.Item>
+                {/* 工具类型 */}
+                <Form.Item
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>工具类型</span>}
+                  name="toolType"
+                  rules={[{ required: true, message: '请选择工具类型' }]}
+                >
+                  <Select style={{ borderRadius: 6 }}>
+                    <Select.Option value="audio-synthesis">
+                      超拟人音频合成
+                    </Select.Option>
+                  </Select>
+                </Form.Item>
+
+                {/* API Key */}
+                <Form.Item
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>API Key</span>}
+                  name="apiKey"
+                  rules={[{ required: true, message: '请输入 API Key' }]}
+                  extra={<span style={{ color: '#6b7280', fontSize: 12 }}>音频合成服务的 API 密钥</span>}
+                >
+                  <Input.Password placeholder="请输入 API Key" style={{ borderRadius: 6 }} />
+                </Form.Item>
+
+                {/* 模型名称 */}
+                <Form.Item
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>模型名称</span>}
+                  name="model"
+                  initialValue="qwen3-tts-flash"
+                  rules={[{ required: true, message: '请输入模型名称' }]}
+                  extra={<span style={{ color: '#6b7280', fontSize: 12 }}>默认使用 qwen3-tts-flash 模型</span>}
+                >
+                  <Input placeholder="qwen3-tts-flash" style={{ borderRadius: 6 }} />
+                </Form.Item>
+              </div>
+
+              <Divider style={{ margin: '20px 0', borderColor: '#e2e8f0' }} />
+
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 16, color: '#1e293b', fontSize: 14 }}>
+                  音色配置
+                </Text>
+
+                {/* 音色选择 */}
+                <Form.Item
+                  label={<span style={{ fontWeight: 500, color: '#374151' }}>音色选择</span>}
+                  name="voice"
+                >
+                  <Select style={{ borderRadius: 6 }}>
+                    <Select.Option value="female-1">女声 1 号</Select.Option>
+                    <Select.Option value="female-2">女声 2 号</Select.Option>
+                    <Select.Option value="male-1">男声 1 号</Select.Option>
+                    <Select.Option value="male-2">男声 2 号</Select.Option>
+                  </Select>
+                </Form.Item>
+              </div>
             </>
           )}
 
