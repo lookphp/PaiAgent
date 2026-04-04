@@ -8,21 +8,19 @@ import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.exception.UploadFileException;
 import com.alibaba.dashscope.utils.Constants;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 
 /**
  * 音频合成服务实现 - 阿里百炼 qwen3-tts-flash
  *
  * 使用 DashScope SDK 2.21.9+ MultiModalConversation API 进行 TTS 合成
+ * 音频文件上传到 MinIO 存储
  *
  * 支持模型:
  * - qwen3-tts-flash
@@ -35,7 +33,10 @@ import java.util.UUID;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AudioSynthesisServiceImpl implements AudioSynthesisService {
+
+    private final MinioService minioService;
 
     // 设置 API 基础 URL
     static {
@@ -78,28 +79,18 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
             MultiModalConversationResult result = conv.call(param);
 
             // 获取音频 URL
-            String audioUrl = result.getOutput().getAudio().getUrl();
-            log.info("音频合成成功，URL: {}", audioUrl);
+            String dashscopeAudioUrl = result.getOutput().getAudio().getUrl();
+            log.info("阿里百炼返回音频 URL: {}", dashscopeAudioUrl);
 
-            // 下载音频到本地
-            String audioFileName = "tts_" + UUID.randomUUID().toString() + ".wav";
-            Path audioPath = Paths.get("temp_audio", audioFileName);
+            // 下载音频数据
+            byte[] audioData = downloadAudio(dashscopeAudioUrl);
+            log.info("音频数据下载完成，大小: {} bytes", audioData.length);
 
-            Files.createDirectories(audioPath.getParent());
+            // 上传到 MinIO
+            String minioUrl = minioService.uploadAudio(audioData, "audio/wav", ".wav");
+            log.info("音频已上传到 MinIO: {}", minioUrl);
 
-            try (InputStream in = new URL(audioUrl).openStream();
-                 FileOutputStream out = new FileOutputStream(audioPath.toFile())) {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, bytesRead);
-                }
-            }
-
-            String localAudioUrl = "/api/audio/" + audioFileName;
-            log.info("音频文件已下载到本地: {}", audioPath.toAbsolutePath());
-
-            return localAudioUrl;
+            return minioUrl;
 
         } catch (ApiException e) {
             log.error("DashScope API 错误", e);
@@ -113,6 +104,21 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
         } catch (Exception e) {
             log.error("调用阿里百炼 TTS API 失败", e);
             throw new RuntimeException("音频合成失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 下载音频数据
+     */
+    private byte[] downloadAudio(String audioUrl) throws Exception {
+        try (InputStream in = new URL(audioUrl).openStream();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+            return out.toByteArray();
         }
     }
 
