@@ -85,6 +85,8 @@ public class WorkflowExecutor {
 
                 // 将结果存储到上下文
                 context.setVariable("lastOutput", result.getOutput());
+                // 保存节点输出，供后续节点引用
+                context.setVariable("node_output_" + nodeId, result.getOutput());
                 if (result.getData() != null) {
                     context.getVariables().putAll(result.getData());
                 }
