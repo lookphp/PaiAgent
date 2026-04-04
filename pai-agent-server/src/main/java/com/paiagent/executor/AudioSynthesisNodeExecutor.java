@@ -25,9 +25,15 @@ public class AudioSynthesisNodeExecutor implements NodeExecutor {
             String apiKey = (String) nodeConfig.get("apiKey");
             String model = (String) nodeConfig.getOrDefault("model", "qwen3-tts-flash");
 
+            log.info("AudioSynthesisNodeExecutor - nodeConfig keys: {}", nodeConfig.keySet());
+            log.info("AudioSynthesisNodeExecutor - apiKey present: {}, model: {}",
+                    apiKey != null && !apiKey.isEmpty(), model);
+
             // 获取输入参数配置
             @SuppressWarnings("unchecked")
             Map<String, Object> toolInputConfig = (Map<String, Object>) nodeConfig.get("toolInputConfig");
+
+            log.info("AudioSynthesisNodeExecutor - toolInputConfig: {}", toolInputConfig);
 
             String text = null;
             String voice = "Cherry";
