@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Node, Edge } from '@xyflow/react';
-import type { Workflow, ExecutionResponse } from '../types/workflow';
+import type { Workflow, ExecutionResponse, ExecutionStatus, SuspendedData, SuspendConfig } from '../types/workflow';
 
 interface WorkflowState {
   // 工作流列表
@@ -18,6 +18,13 @@ interface WorkflowState {
   isExecuting: boolean;
   executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string; inputTokens?: number; outputTokens?: number; totalTokens?: number }[];
   executionResult: ExecutionResponse | null;
+
+  // 增量执行状态
+  executionSessionId: number | null;
+  executionStatus: ExecutionStatus;
+  suspendedData: SuspendedData | null;
+  suspendConfig: SuspendConfig;
+  editedOutput: string;
 
   // 调试抽屉状态
   debugDrawerOpen: boolean;
@@ -50,6 +57,14 @@ interface WorkflowState {
   setIsExecuting: (executing: boolean) => void;
   addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string; inputTokens?: number; outputTokens?: number; totalTokens?: number }) => void;
   setExecutionResult: (result: ExecutionResponse | null) => void;
+
+  // Actions - 增量执行
+  setExecutionSessionId: (id: number | null) => void;
+  setExecutionStatus: (status: ExecutionStatus) => void;
+  setSuspendedData: (data: SuspendedData | null) => void;
+  setSuspendConfig: (config: SuspendConfig) => void;
+  setEditedOutput: (output: string) => void;
+  resetExecution: () => void;
 
   // Actions - 调试抽屉
   setDebugDrawerOpen: (open: boolean) => void;
@@ -85,6 +100,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   isExecuting: false,
   executionLogs: [],
   executionResult: null,
+  executionSessionId: null,
+  executionStatus: 'idle',
+  suspendedData: null,
+  suspendConfig: { nodeTypes: [] },
+  editedOutput: '',
   debugDrawerOpen: false,
   debugInput: '',
   configDrawerOpen: false,
@@ -228,6 +248,27 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
 
   setExecutionResult: (result) => set({ executionResult: result }),
+
+  // 增量执行状态管理
+  setExecutionSessionId: (id) => set({ executionSessionId: id }),
+  setExecutionStatus: (status) => set({ executionStatus: status }),
+  setSuspendedData: (data) => {
+    set({ suspendedData: data });
+    if (data) {
+      set({ editedOutput: data.output });
+    }
+  },
+  setSuspendConfig: (config) => set({ suspendConfig: config }),
+  setEditedOutput: (output) => set({ editedOutput: output }),
+  resetExecution: () => set({
+    executionSessionId: null,
+    executionStatus: 'idle',
+    suspendedData: null,
+    editedOutput: '',
+    executionLogs: [],
+    executionResult: null,
+    isExecuting: false,
+  }),
 
   // 调试抽屉管理
   setDebugDrawerOpen: (open) => set({ debugDrawerOpen: open }),

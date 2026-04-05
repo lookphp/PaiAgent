@@ -25,11 +25,18 @@ export interface Workflow {
   updatedAt?: string;
 }
 
+// 执行状态枚举
+export type ExecutionStatus = 'idle' | 'running' | 'suspended' | 'completed' | 'error' | 'cancelled';
+
 // 执行请求接口
 export interface ExecutionRequest {
   workflowId: number;
   input: string;
   parameters?: Record<string, any>;
+  /** 在哪些节点类型后暂停（如 ["llm"]） */
+  suspendOnNodeTypes?: string[];
+  /** 在哪些节点ID后暂停 */
+  suspendOnNodeIds?: string[];
 }
 
 // 执行响应接口
@@ -43,6 +50,22 @@ export interface ExecutionResponse {
   totalTokens?: number;
   totalInputTokens?: number;
   totalOutputTokens?: number;
+  /** 执行会话ID */
+  executionId?: number;
+  /** 执行状态 */
+  status?: ExecutionStatus;
+  /** 暂停节点ID */
+  suspendedNodeId?: string;
+  /** 暂停节点类型 */
+  suspendedNodeType?: string;
+  /** 暂停节点的输出（供编辑） */
+  suspendedOutput?: string;
+}
+
+// 恢复执行请求接口
+export interface ResumeRequest {
+  /** 修改后的输出内容 */
+  modifiedOutput: string;
 }
 
 // 执行日志接口
@@ -76,4 +99,16 @@ export interface ExecutionHistory {
   errorMessage?: string;
   nodeCount?: number;
   executedAt: string;
+}
+
+// 暂停数据接口
+export interface SuspendedData {
+  nodeId: string;
+  nodeType: string;
+  output: string;
+}
+
+// 暂停配置接口
+export interface SuspendConfig {
+  nodeTypes: string[];
 }

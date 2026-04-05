@@ -509,7 +509,7 @@
 
 /* 第一栏：输入区域 */
 .debug-input-section {
-  width: 25%;
+  width: 35%;
   min-width: 240px;
   padding: 16px;
   border-right: 1px solid var(--border);
@@ -525,8 +525,8 @@
 
 /* 第二栏：执行日志 */
 .debug-logs-section {
-  width: 50%;
-  flex: 1;
+  width: 30%;
+  flex: none;
   padding: 16px;
   overflow: auto;
   background: var(--bg-primary);
@@ -554,9 +554,8 @@
 
 /* 第三栏：执行结果 */
 .debug-result-section {
-  width: 25%;
-  min-width: 240px;
-  max-width: 360px;
+  width: 35%;
+  min-width: 280px;
   padding: 16px;
   overflow: auto;
   background: var(--bg-secondary);

@@ -42,6 +42,7 @@ public class ExecutionContext {
      * 日志条目
      */
     @lombok.Data
+    @lombok.NoArgsConstructor
     public static class LogEntry {
         private String message;
         private long durationMs;

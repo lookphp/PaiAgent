@@ -1,5 +1,5 @@
 import api from './api';
-import type { Workflow, ExecutionRequest, ExecutionResponse, ExecutionHistory } from '../types/workflow';
+import type { Workflow, ExecutionRequest, ExecutionResponse, ExecutionHistory, ResumeRequest } from '../types/workflow';
 
 /**
  * 工作流 API 服务
@@ -34,8 +34,39 @@ export const workflowApi = {
     await api.delete(`/workflows/${id}`);
   },
 
-  // 执行工作流
+  // ========== 执行相关接口 ==========
+
+  // 开始执行（支持暂停点配置）
+  startExecution: async (request: ExecutionRequest): Promise<ExecutionResponse> => {
+    const response = await api.post<ExecutionResponse>('/execution/start', request);
+    return response.data;
+  },
+
+  // 获取执行状态
+  getExecutionStatus: async (executionId: number): Promise<ExecutionResponse> => {
+    const response = await api.get<ExecutionResponse>(`/execution/${executionId}/status`);
+    return response.data;
+  },
+
+  // 恢复执行
+  resumeExecution: async (executionId: number, request: ResumeRequest): Promise<ExecutionResponse> => {
+    const response = await api.post<ExecutionResponse>(`/execution/${executionId}/resume`, request);
+    return response.data;
+  },
+
+  // 取消执行
+  cancelExecution: async (executionId: number): Promise<ExecutionResponse> => {
+    const response = await api.post<ExecutionResponse>(`/execution/${executionId}/cancel`);
+    return response.data;
+  },
+
+  // 执行工作流（兼容旧接口）
   execute: async (request: ExecutionRequest): Promise<ExecutionResponse> => {
+    // 如果有暂停配置，使用 startExecution
+    if (request.suspendOnNodeTypes || request.suspendOnNodeIds) {
+      return workflowApi.startExecution(request);
+    }
+
     // 如果有 workflowId 且不是 0，使用标准执行端点
     if (request.workflowId && request.workflowId !== 0) {
       const response = await api.post<ExecutionResponse>('/execution', {
