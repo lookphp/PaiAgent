@@ -62,7 +62,8 @@ const SuspendedEditor: React.FC<SuspendedEditorProps> = () => {
         } else {
           // 完成
           setExecutionStatus('completed');
-          response.logs?.forEach((log: any) => {
+          // 只添加节点执行完成的日志（有 nodeType 的）
+          response.logs?.filter((log: any) => log.nodeType).forEach((log: any) => {
             addExecutionLog({
               message: log.message,
               durationMs: log.durationMs,

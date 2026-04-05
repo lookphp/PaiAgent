@@ -157,13 +157,15 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
         });
       }
 
-      // 使用真实返回的日志
+      // 使用真实返回的日志，只保留节点执行完成的日志
       if (response.logs && response.logs.length > 0) {
-        const realLogs: ExecutionLog[] = response.logs.map((log: any, index: number) => ({
+        // 过滤出有 nodeType 的日志（节点执行完成记录）
+        const nodeLogs = response.logs.filter((log: any) => log.nodeType);
+        const realLogs: ExecutionLog[] = nodeLogs.map((log: any, index: number) => ({
           id: `log-${index}`,
           message: log.message,
           timestamp: new Date().toLocaleTimeString(),
-          status: log.nodeType ? 'success' : 'running',
+          status: 'success',
           nodeType: log.nodeType,
           nodeLabel: log.nodeLabel,
           durationMs: log.durationMs,
@@ -174,8 +176,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
         }));
         setLogs(realLogs);
         // 根据节点日志数量计算进度
-        const nodeLogs = realLogs.filter(l => l.nodeType);
-        const progressPercent = Math.min(90, nodeLogs.length * 25);
+        const progressPercent = Math.min(90, realLogs.length * 25);
         setProgress(progressPercent);
       }
 
@@ -239,13 +240,14 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
         modifiedOutput: editedOutput,
       });
 
-      // 使用真实返回的日志
+      // 使用真实返回的日志，只保留节点执行完成的日志
       if (response.logs && response.logs.length > 0) {
-        const realLogs: ExecutionLog[] = response.logs.map((log: any, index: number) => ({
+        const nodeLogs = response.logs.filter((log: any) => log.nodeType);
+        const realLogs: ExecutionLog[] = nodeLogs.map((log: any, index: number) => ({
           id: `log-${index}`,
           message: log.message,
           timestamp: new Date().toLocaleTimeString(),
-          status: log.nodeType ? 'success' : 'running',
+          status: 'success',
           nodeType: log.nodeType,
           nodeLabel: log.nodeLabel,
           durationMs: log.durationMs,

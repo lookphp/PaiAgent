@@ -102,8 +102,8 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           // 暂停状态
           setExecutionStatus('suspended');
 
-          // 先添加后端返回的所有日志（按正确顺序）
-          response.logs?.forEach((log: any) => {
+          // 只添加节点执行完成的日志（有 nodeType 的）
+          response.logs?.filter((log: any) => log.nodeType).forEach((log: any) => {
             addExecutionLog({
               message: log.message,
               durationMs: log.durationMs,
@@ -136,7 +136,8 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
         } else {
           // 完成
           setExecutionStatus('completed');
-          response.logs?.forEach((log: any) => {
+          // 只添加节点执行完成的日志（有 nodeType 的）
+          response.logs?.filter((log: any) => log.nodeType).forEach((log: any) => {
             addExecutionLog({
               message: log.message,
               durationMs: log.durationMs,

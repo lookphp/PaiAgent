@@ -18,7 +18,6 @@ com/paiagent/config/MinioConfig.class
 com/paiagent/executor/AudioSynthesisNodeExecutor.class
 com/paiagent/config/CorsConfig.class
 com/paiagent/executor/InputNodeExecutor.class
-com/paiagent/executor/WorkflowExecutor$ExecutionResult$ExecutionResultBuilder.class
 com/paiagent/service/LLMProviderServiceImpl.class
 com/paiagent/executor/ExecutionContext$ExecutionContextBuilder.class
 com/paiagent/controller/ExecutionHistoryController.class
