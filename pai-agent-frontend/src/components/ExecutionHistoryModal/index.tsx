@@ -17,19 +17,18 @@ import {
 } from 'antd';
 import {
   HistoryOutlined,
-  PlayCircleOutlined,
   DeleteOutlined,
   EyeOutlined,
   SoundOutlined,
   FileTextOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ClockCircleOutlined,
-  ThunderboltOutlined,
   RobotOutlined,
   ToolOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import AudioPlayer from 'react-h5-audio-player';
+import 'react-h5-audio-player/lib/styles.css';
 import { workflowApi } from '../../services/workflowApi';
 import type { ExecutionHistory } from '../../types/workflow';
 
@@ -215,6 +214,18 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
     }
   };
 
+  // 从日志中提取 LLM 输出
+  const extractLlmOutput = (logsJson?: string) => {
+    if (!logsJson) return null;
+    try {
+      const logs = JSON.parse(logsJson);
+      const llmLog = logs.find((log: any) => log.nodeType === 'llm' && log.output);
+      return llmLog?.output || null;
+    } catch {
+      return null;
+    }
+  };
+
   // 获取节点图标
   const getNodeIcon = (type?: string) => {
     switch (type) {
@@ -341,6 +352,30 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
               </Card>
             )}
 
+            {/* LLM 输出 */}
+            {extractLlmOutput(selectedHistory.executionLogs) && (
+              <Card
+                size="small"
+                title={<span><RobotOutlined style={{ color: '#8b5cf6' }} /> LLM 输出</span>}
+                style={{ marginBottom: 16 }}
+              >
+                <div
+                  style={{
+                    padding: 12,
+                    background: '#f5f3ff',
+                    borderRadius: 6,
+                    maxHeight: 200,
+                    overflow: 'auto',
+                    border: '1px solid #e9d5ff',
+                  }}
+                >
+                  <Text style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: 13 }}>
+                    {extractLlmOutput(selectedHistory.executionLogs)}
+                  </Text>
+                </div>
+              </Card>
+            )}
+
             {/* 音频 */}
             {selectedHistory.audioUrl && (
               <Card
@@ -348,7 +383,13 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                 title={<span><SoundOutlined /> 音频输出</span>}
                 style={{ marginBottom: 16 }}
               >
-                <audio controls src={selectedHistory.audioUrl} style={{ width: '100%' }} />
+                <AudioPlayer
+                  src={selectedHistory.audioUrl}
+                  layout="horizontal-reverse"
+                  showJumpControls={false}
+                  customVolumeControls={[]}
+                  customAdditionalControls={[]}
+                />
               </Card>
             )}
 

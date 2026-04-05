@@ -30,6 +30,8 @@ import {
   EditOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
+import AudioPlayer from 'react-h5-audio-player';
+import 'react-h5-audio-player/lib/styles.css';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
 
@@ -752,13 +754,13 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                   size="small"
                   style={{ marginBottom: 16 }}
                 >
-                  <div style={{ padding: 12, background: '#e6f7ff', borderRadius: 6 }}>
-                    <audio
-                      controls
-                      src={result.audioUrl}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
+                  <AudioPlayer
+                    src={result.audioUrl}
+                    layout="horizontal-reverse"
+                    showJumpControls={false}
+                    customVolumeControls={[]}
+                    customAdditionalControls={[]}
+                  />
                 </Card>
               )}
 

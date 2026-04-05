@@ -26,6 +26,8 @@ import {
   ThunderboltOutlined,
   EditOutlined,
 } from '@ant-design/icons';
+import AudioPlayer from 'react-h5-audio-player';
+import 'react-h5-audio-player/lib/styles.css';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
 import SuspendedEditor from '../SuspendedEditor';
@@ -395,23 +397,13 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                 )}
 
                 {executionResult.audioUrl && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: '#eff6ff',
-                      border: '1px solid #93c5fd',
-                      borderRadius: 8,
-                    }}
-                  >
-                    <div style={{ marginBottom: 8 }}>
-                      <Tag color="blue" style={{ fontSize: 11 }}>音频输出</Tag>
-                    </div>
-                    <audio
-                      controls
-                      src={executionResult.audioUrl}
-                      style={{ width: '100%', height: 36 }}
-                    />
-                  </div>
+                  <AudioPlayer
+                    src={executionResult.audioUrl}
+                    layout="horizontal-reverse"
+                    showJumpControls={false}
+                    customVolumeControls={[]}
+                    customAdditionalControls={[]}
+                  />
                 )}
               </div>
             )}
