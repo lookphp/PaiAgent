@@ -30,6 +30,25 @@ public class NodeExecutionResult {
      */
     private java.util.Map<String, Object> data;
 
+    /**
+     * 输入 token 数量
+     */
+    @Builder.Default
+    private int inputTokens = 0;
+
+    /**
+     * 输出 token 数量
+     */
+    @Builder.Default
+    private int outputTokens = 0;
+
+    /**
+     * 总 token 数量
+     */
+    public int getTotalTokens() {
+        return inputTokens + outputTokens;
+    }
+
     public static NodeExecutionResult success(String output) {
         return NodeExecutionResult.builder()
                 .success(true)
@@ -42,6 +61,25 @@ public class NodeExecutionResult {
                 .success(true)
                 .output(output)
                 .data(data)
+                .build();
+    }
+
+    public static NodeExecutionResult success(String output, int inputTokens, int outputTokens) {
+        return NodeExecutionResult.builder()
+                .success(true)
+                .output(output)
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
+                .build();
+    }
+
+    public static NodeExecutionResult success(String output, java.util.Map<String, Object> data, int inputTokens, int outputTokens) {
+        return NodeExecutionResult.builder()
+                .success(true)
+                .output(output)
+                .data(data)
+                .inputTokens(inputTokens)
+                .outputTokens(outputTokens)
                 .build();
     }
 

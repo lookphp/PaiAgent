@@ -47,6 +47,9 @@ interface ExecutionLog {
   nodeLabel?: string;
   durationMs?: number;
   output?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
 }
 
 const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) => {
@@ -61,6 +64,10 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
     output?: string;
     audioUrl?: string;
     error?: string;
+    totalDuration?: number;
+    totalTokens?: number;
+    totalInputTokens?: number;
+    totalOutputTokens?: number;
   } | null>(null);
 
   // 重置状态
@@ -217,6 +224,9 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           nodeLabel: log.nodeLabel,
           durationMs: log.durationMs,
           output: log.output,
+          inputTokens: log.inputTokens,
+          outputTokens: log.outputTokens,
+          totalTokens: log.totalTokens,
         }));
         setLogs(realLogs);
       }
@@ -229,11 +239,17 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           success: true,
           output: response.output,
           audioUrl: response.audioUrl,
+          totalDuration: response.totalDuration,
+          totalTokens: response.totalTokens,
+          totalInputTokens: response.totalInputTokens,
+          totalOutputTokens: response.totalOutputTokens,
         });
       } else {
         setResult({
           success: false,
           error: response.error,
+          totalDuration: response.totalDuration,
+          totalTokens: response.totalTokens,
         });
       }
     } catch (error: any) {
@@ -442,8 +458,16 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                       <div style={{ fontSize: 12, color: '#999' }}>
                         {log.status === 'pending' && '等待执行'}
                         {log.status === 'running' && '执行中...'}
-                        {log.status === 'success' &&
-                          `执行完成 ${log.durationMs ? `(${log.durationMs}ms)` : ''}`}
+                        {log.status === 'success' && (
+                          <span>
+                            执行完成 {log.durationMs ? `(${log.durationMs}ms)` : ''}
+                            {log.totalTokens && log.totalTokens > 0 && (
+                              <span style={{ color: '#1677ff', marginLeft: 8 }}>
+                                Token: {log.totalTokens.toLocaleString()}
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <Tag
@@ -481,17 +505,29 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
 
               {/* 执行统计 */}
               <Card size="small" style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, textAlign: 'center', minWidth: 80 }}>
                     <div style={{ fontSize: 12, color: '#999' }}>执行节点</div>
                     <div style={{ fontSize: 20, fontWeight: 600 }}>{nodes.length}</div>
                   </div>
                   <Divider type="vertical" style={{ height: 40 }} />
-                  <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ flex: 1, textAlign: 'center', minWidth: 80 }}>
                     <div style={{ fontSize: 12, color: '#999' }}>总耗时</div>
                     <div style={{ fontSize: 20, fontWeight: 600 }}>
-                      {logs.reduce((sum, log) => sum + (log.durationMs || 0), 0)}ms
+                      {result.totalDuration ? `${result.totalDuration}ms` : `${logs.reduce((sum, log) => sum + (log.durationMs || 0), 0)}ms`}
                     </div>
+                  </div>
+                  <Divider type="vertical" style={{ height: 40 }} />
+                  <div style={{ flex: 1, textAlign: 'center', minWidth: 100 }}>
+                    <div style={{ fontSize: 12, color: '#999' }}>Token 使用</div>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: '#1677ff' }}>
+                      {result.totalTokens?.toLocaleString() || 0}
+                    </div>
+                    {result.totalTokens && result.totalTokens > 0 && (
+                      <div style={{ fontSize: 11, color: '#999' }}>
+                        输入 {result.totalInputTokens?.toLocaleString() || 0} / 输出 {result.totalOutputTokens?.toLocaleString() || 0}
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>

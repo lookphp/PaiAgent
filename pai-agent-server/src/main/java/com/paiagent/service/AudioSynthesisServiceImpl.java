@@ -27,9 +27,14 @@ import java.net.URL;
  * - qwen3-tts-instruct-flash (支持指令控制)
  *
  * 音色选项:
- * - Cherry (女声)
- * - Serena (女声)
- * - Ethan (男声)
+ * - Cherry (女声-活力)
+ * - Serena (女声-温柔)
+ * - Amber (女声-自然)
+ * - Anna (女声-甜美)
+ * - Ethan (男声-沉稳)
+ * - Adam (男声-磁性)
+ * - Daniel (男声-成熟)
+ * - Harry (男声-年轻)
  */
 @Slf4j
 @Service

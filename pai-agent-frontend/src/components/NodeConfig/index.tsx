@@ -319,9 +319,14 @@ const NodeConfigPanel: React.FC = () => {
           <Card size="small" title="音色配置" style={{ marginBottom: 16 }}>
             <Form.Item name={['toolInputConfig', 'voice']} label="音色" initialValue="Cherry">
               <Select>
-                <Select.Option value="Cherry">Cherry</Select.Option>
-                <Select.Option value="Serena">Serena</Select.Option>
-                <Select.Option value="Ethan">Ethan</Select.Option>
+                <Select.Option value="Cherry">Cherry（女声-活力）</Select.Option>
+                <Select.Option value="Serena">Serena（女声-温柔）</Select.Option>
+                <Select.Option value="Amber">Amber（女声-自然）</Select.Option>
+                <Select.Option value="Anna">Anna（女声-甜美）</Select.Option>
+                <Select.Option value="Ethan">Ethan（男声-沉稳）</Select.Option>
+                <Select.Option value="Adam">Adam（男声-磁性）</Select.Option>
+                <Select.Option value="Daniel">Daniel（男声-成熟）</Select.Option>
+                <Select.Option value="Harry">Harry（男声-年轻）</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item name={['toolInputConfig', 'languageType']} label="语言类型" initialValue="Auto">

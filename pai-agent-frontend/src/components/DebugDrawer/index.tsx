@@ -20,6 +20,7 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   ClockCircleOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
@@ -83,6 +84,9 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
             nodeLabel: log.nodeLabel,
             output: log.output,
             type: log.nodeType || 'system',
+            inputTokens: log.inputTokens,
+            outputTokens: log.outputTokens,
+            totalTokens: log.totalTokens,
           });
         });
         addExecutionLog({ message: '执行完成', type: 'success' });
@@ -90,6 +94,10 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           success: true,
           output: response.output,
           audioUrl: response.audioUrl,
+          totalDuration: response.totalDuration,
+          totalTokens: response.totalTokens,
+          totalInputTokens: response.totalInputTokens,
+          totalOutputTokens: response.totalOutputTokens,
         });
       } else {
         addExecutionLog({ message: `执行失败: ${response.error}`, type: 'error' });
@@ -211,7 +219,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                           <div style={{ marginBottom: 4 }}>
                             <Text style={{ fontSize: 13 }}>{log.message}</Text>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {log.nodeLabel && (
                               <Tag
                                 style={{
@@ -236,6 +244,20 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                                 }}
                               >
                                 {log.durationMs}ms
+                              </span>
+                            )}
+                            {log.totalTokens && log.totalTokens > 0 && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: '#1677ff',
+                                  background: '#e6f4ff',
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  fontFamily: 'monospace',
+                                }}
+                              >
+                                {log.totalTokens.toLocaleString()} tokens
                               </span>
                             )}
                           </div>
@@ -301,6 +323,47 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
 
             {executionResult?.success && (
               <div className="debug-result-content">
+                {/* Token 统计 */}
+                {executionResult.totalTokens !== undefined && executionResult.totalTokens > 0 && (
+                  <div
+                    style={{
+                      padding: 12,
+                      background: '#f0f5ff',
+                      border: '1px solid #91caff',
+                      borderRadius: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: '#666' }}>Token 使用</div>
+                        <div style={{ fontSize: 20, fontWeight: 600, color: '#1677ff' }}>
+                          {executionResult.totalTokens?.toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: '#666' }}>输入</div>
+                        <div style={{ fontSize: 14, fontWeight: 500 }}>
+                          {executionResult.totalInputTokens?.toLocaleString() || 0}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: '#666' }}>输出</div>
+                        <div style={{ fontSize: 14, fontWeight: 500 }}>
+                          {executionResult.totalOutputTokens?.toLocaleString() || 0}
+                        </div>
+                      </div>
+                      {executionResult.totalDuration !== undefined && (
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, color: '#666' }}>总耗时</div>
+                          <div style={{ fontSize: 14, fontWeight: 500 }}>
+                            {executionResult.totalDuration}ms
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {executionResult.output && (
                   <div style={{ marginBottom: 16 }}>
                     <div

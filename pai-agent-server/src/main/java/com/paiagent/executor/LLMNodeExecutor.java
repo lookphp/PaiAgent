@@ -35,6 +35,9 @@ public class LLMNodeExecutor implements NodeExecutor {
 
             context.addLog("调用大模型：" + model);
 
+            // 计算输入 token（估算）
+            int inputTokens = estimateTokens(prompt) + estimateTokens(input);
+
             // 调用 LLM 服务
             String response;
             if (apiUrl != null && !apiUrl.isEmpty() && apiKey != null && !apiKey.isEmpty()) {
@@ -47,15 +50,33 @@ public class LLMNodeExecutor implements NodeExecutor {
                 response = llmProviderService.invoke(model, prompt, input);
             }
 
-            context.addLog("大模型响应成功");
+            // 计算输出 token（估算）
+            int outputTokens = estimateTokens(response);
+            int totalTokens = inputTokens + outputTokens;
 
-            return NodeExecutionResult.success(response);
+            context.addLog("大模型响应成功，Token 使用量: " + totalTokens + " (输入: " + inputTokens + ", 输出: " + outputTokens + ")");
+
+            return NodeExecutionResult.success(response, inputTokens, outputTokens);
 
         } catch (Exception e) {
             log.error("LLM 节点执行失败", e);
             context.addLog("LLM 节点执行失败：" + e.getMessage());
             return NodeExecutionResult.error(e.getMessage());
         }
+    }
+
+    /**
+     * 估算 token 数量
+     * 中文：约 1.5 个字符/token
+     * 英文：约 4 个字符/token
+     * 这里使用简化算法：总字符数 / 2
+     */
+    private int estimateTokens(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        // 简单的估算：平均每个 token 约 2 个字符（中英文混合）
+        return (int) Math.ceil(text.length() / 2.0);
     }
 
     @Override

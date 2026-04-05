@@ -37,6 +37,24 @@ export interface ExecutionResponse {
   success: boolean;
   output?: string;
   audioUrl?: string;
-  logs?: string[];
+  logs?: ExecutionLog[];
   error?: string;
+  totalDuration?: number;
+  totalTokens?: number;
+  totalInputTokens?: number;
+  totalOutputTokens?: number;
+}
+
+// 执行日志接口
+export interface ExecutionLog {
+  message: string;
+  timestamp?: string;
+  durationMs?: number;
+  nodeType?: string;
+  nodeId?: string;
+  nodeLabel?: string;
+  output?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
 }

@@ -16,7 +16,7 @@ interface WorkflowState {
 
   // 执行状态
   isExecuting: boolean;
-  executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string }[];
+  executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string; inputTokens?: number; outputTokens?: number; totalTokens?: number }[];
   executionResult: ExecutionResponse | null;
 
   // 调试抽屉状态
@@ -48,7 +48,7 @@ interface WorkflowState {
 
   // Actions - 执行
   setIsExecuting: (executing: boolean) => void;
-  addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string }) => void;
+  addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string; inputTokens?: number; outputTokens?: number; totalTokens?: number }) => void;
   setExecutionResult: (result: ExecutionResponse | null) => void;
 
   // Actions - 调试抽屉

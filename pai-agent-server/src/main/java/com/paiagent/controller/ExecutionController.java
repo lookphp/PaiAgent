@@ -50,13 +50,17 @@ public class ExecutionController {
 
             if (!result.isSuccess()) {
                 return ResponseEntity.badRequest()
-                        .body(ExecutionResponse.error(result.getError()));
+                        .body(ExecutionResponse.error(result.getError(), result.getLogs()));
             }
 
             return ResponseEntity.ok(ExecutionResponse.success(
                     result.getOutput(),
                     result.getAudioUrl(),
-                    result.getLogs()
+                    result.getLogs(),
+                    result.getTotalDuration(),
+                    result.getTotalTokens(),
+                    result.getTotalInputTokens(),
+                    result.getTotalOutputTokens()
             ));
 
         } catch (JsonProcessingException e) {
@@ -86,13 +90,17 @@ public class ExecutionController {
 
             if (!result.isSuccess()) {
                 return ResponseEntity.badRequest()
-                        .body(ExecutionResponse.error(result.getError()));
+                        .body(ExecutionResponse.error(result.getError(), result.getLogs()));
             }
 
             return ResponseEntity.ok(ExecutionResponse.success(
                     result.getOutput(),
                     result.getAudioUrl(),
-                    result.getLogs()
+                    result.getLogs(),
+                    result.getTotalDuration(),
+                    result.getTotalTokens(),
+                    result.getTotalInputTokens(),
+                    result.getTotalOutputTokens()
             ));
 
         } catch (Exception e) {

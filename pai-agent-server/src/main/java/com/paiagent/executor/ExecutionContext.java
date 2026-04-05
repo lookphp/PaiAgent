@@ -49,6 +49,9 @@ public class ExecutionContext {
         private String nodeId;
         private String nodeLabel;
         private String output;
+        private int inputTokens;
+        private int outputTokens;
+        private int totalTokens;
 
         public LogEntry(String message, long durationMs, String nodeType) {
             this.message = message;
@@ -63,6 +66,19 @@ public class ExecutionContext {
             this.nodeId = nodeId;
             this.nodeLabel = nodeLabel;
             this.output = output;
+        }
+
+        public LogEntry(String message, long durationMs, String nodeType, String nodeId, String nodeLabel, String output,
+                        int inputTokens, int outputTokens, int totalTokens) {
+            this.message = message;
+            this.durationMs = durationMs;
+            this.nodeType = nodeType;
+            this.nodeId = nodeId;
+            this.nodeLabel = nodeLabel;
+            this.output = output;
+            this.inputTokens = inputTokens;
+            this.outputTokens = outputTokens;
+            this.totalTokens = totalTokens;
         }
 
         public LogEntry(String message) {
@@ -135,12 +151,49 @@ public class ExecutionContext {
     }
 
     /**
-     * 获取总耗时
+     * 结束计时并添加日志（带节点输出和 token 使用量）
      */
-    public long getTotalDuration() {
+    public void endStep(String nodeType, String nodeId, String nodeLabel, String output, int inputTokens, int outputTokens) {
+        long duration = System.currentTimeMillis() - this.stepStartTime;
+        String summary = output != null && output.length() > 100
+            ? output.substring(0, 100) + "..."
+            : (output != null ? output : "完成");
+        int totalTokens = inputTokens + outputTokens;
+        addLog("完成 " + nodeType + " 节点: " + nodeLabel, duration, nodeType, nodeId, nodeLabel, output, inputTokens, outputTokens, totalTokens);
+    }
+
+    /**
+     * 添加日志（带节点输出和 token 使用量）
+     */
+    public void addLog(String message, long durationMs, String nodeType, String nodeId, String nodeLabel, String output,
+                       int inputTokens, int outputTokens, int totalTokens) {
+        logs.add(new LogEntry(message, durationMs, nodeType, nodeId, nodeLabel, output, inputTokens, outputTokens, totalTokens));
+    }
+
+    /**
+     * 获取总 token 使用量
+     */
+    public int getTotalTokens() {
         return logs.stream()
-                .filter(log -> log.getDurationMs() > 0)
-                .mapToLong(LogEntry::getDurationMs)
+                .mapToInt(LogEntry::getTotalTokens)
+                .sum();
+    }
+
+    /**
+     * 获取总输入 token
+     */
+    public int getTotalInputTokens() {
+        return logs.stream()
+                .mapToInt(LogEntry::getInputTokens)
+                .sum();
+    }
+
+    /**
+     * 获取总输出 token
+     */
+    public int getTotalOutputTokens() {
+        return logs.stream()
+                .mapToInt(LogEntry::getOutputTokens)
                 .sum();
     }
 }

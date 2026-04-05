@@ -74,8 +74,8 @@ public class WorkflowExecutor {
 
                 NodeExecutionResult result = executor.execute(context, nodeData != null ? nodeData : new HashMap<>());
 
-                // 记录节点执行完成（包含输出）
-                context.endStep(nodeType, nodeId, nodeLabel, result.getOutput());
+                // 记录节点执行完成（包含输出和 token 使用量）
+                context.endStep(nodeType, nodeId, nodeLabel, result.getOutput(), result.getInputTokens(), result.getOutputTokens());
 
                 results.put(nodeId, result);
 
@@ -93,12 +93,19 @@ public class WorkflowExecutor {
             }
 
             long totalDuration = System.currentTimeMillis() - workflowStartTime;
-            context.addLog("工作流执行完成，总耗时: " + totalDuration + "ms");
+            int totalTokens = context.getTotalTokens();
+            int totalInputTokens = context.getTotalInputTokens();
+            int totalOutputTokens = context.getTotalOutputTokens();
+            context.addLog("工作流执行完成，总耗时: " + totalDuration + "ms，总 Token: " + totalTokens);
 
             return ExecutionResult.success(
                     context.getStringVariable("lastOutput"),
                     (String) context.getVariable("audioUrl"),
-                    context.getLogs()
+                    context.getLogs(),
+                    totalDuration,
+                    totalTokens,
+                    totalInputTokens,
+                    totalOutputTokens
             );
 
         } catch (Exception e) {
@@ -199,13 +206,22 @@ public class WorkflowExecutor {
         private String audioUrl;
         private List<ExecutionContext.LogEntry> logs;
         private String error;
+        private long totalDuration;
+        private int totalTokens;
+        private int totalInputTokens;
+        private int totalOutputTokens;
 
-        public static ExecutionResult success(String output, String audioUrl, List<ExecutionContext.LogEntry> logs) {
+        public static ExecutionResult success(String output, String audioUrl, List<ExecutionContext.LogEntry> logs,
+                                              long totalDuration, int totalTokens, int totalInputTokens, int totalOutputTokens) {
             return ExecutionResult.builder()
                     .success(true)
                     .output(output)
                     .audioUrl(audioUrl)
                     .logs(logs)
+                    .totalDuration(totalDuration)
+                    .totalTokens(totalTokens)
+                    .totalInputTokens(totalInputTokens)
+                    .totalOutputTokens(totalOutputTokens)
                     .build();
         }
 
@@ -214,6 +230,10 @@ public class WorkflowExecutor {
                     .success(false)
                     .error(error)
                     .logs(logs)
+                    .totalDuration(0)
+                    .totalTokens(0)
+                    .totalInputTokens(0)
+                    .totalOutputTokens(0)
                     .build();
         }
 
@@ -222,6 +242,10 @@ public class WorkflowExecutor {
                     .success(false)
                     .error(error)
                     .logs(new ArrayList<>())
+                    .totalDuration(0)
+                    .totalTokens(0)
+                    .totalInputTokens(0)
+                    .totalOutputTokens(0)
                     .build();
         }
     }
