@@ -1,15 +1,32 @@
 import React from 'react';
-import { Drawer, Input, Button, Divider, Typography, Spin, Tag } from 'antd';
+import {
+  Input,
+  Button,
+  Typography,
+  Spin,
+  Tag,
+  Timeline,
+  Collapse,
+  Empty,
+  Tooltip,
+} from 'antd';
 import {
   PlayCircleOutlined,
   BugOutlined,
   LoadingOutlined,
+  CloseOutlined,
+  UpOutlined,
+  DownOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
 
 const { TextArea } = Input;
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
+const { Panel } = Collapse;
 
 interface DebugDrawerProps {}
 
@@ -31,20 +48,14 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
   } = useWorkflowStore();
 
   const handleRun = async () => {
-    if (!debugInput.trim()) {
-      return;
-    }
+    if (!debugInput.trim()) return;
 
     setIsExecuting(true);
     setExecutionResult(null);
-
-    // 清空之前的日志
-    addExecutionLog({ message: '开始执行工作流...' });
-    addExecutionLog({ message: `输入内容：${debugInput}` });
+    addExecutionLog({ message: '开始执行工作流...', type: 'system' });
+    addExecutionLog({ message: `输入: ${debugInput}`, type: 'input' });
 
     try {
-      // 如果有保存的工作流，使用工作流 ID 执行
-      // 否则使用快速执行模式，传递当前画布的节点和边
       let response;
       if (currentWorkflow?.id) {
         response = await workflowApi.execute({
@@ -52,7 +63,6 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
           input: debugInput,
         });
       } else {
-        // 快速执行模式 - 使用当前画布的节点和边
         response = await workflowApi.execute({
           workflowId: 0,
           input: debugInput,
@@ -64,344 +74,300 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
       }
 
       if (response.success) {
-        // 处理日志，每条日志可能包含 durationMs、nodeType、nodeId、nodeLabel、output
         response.logs?.forEach((log: any) => {
-          if (typeof log === 'string') {
-            addExecutionLog({ message: log });
-          } else {
-            addExecutionLog({
-              message: log.message,
-              durationMs: log.durationMs,
-              nodeType: log.nodeType,
-              nodeId: log.nodeId,
-              nodeLabel: log.nodeLabel,
-              output: log.output,
-            });
-          }
+          addExecutionLog({
+            message: log.message,
+            durationMs: log.durationMs,
+            nodeType: log.nodeType,
+            nodeId: log.nodeId,
+            nodeLabel: log.nodeLabel,
+            output: log.output,
+            type: log.nodeType || 'system',
+          });
         });
-        addExecutionLog({ message: '执行完成！' });
+        addExecutionLog({ message: '执行完成', type: 'success' });
         setExecutionResult({
           success: true,
           output: response.output,
           audioUrl: response.audioUrl,
-          logs: response.logs,
         });
       } else {
-        addExecutionLog({ message: `执行失败：${response.error}` });
-        setExecutionResult({
-          success: false,
-          error: response.error,
-        });
+        addExecutionLog({ message: `执行失败: ${response.error}`, type: 'error' });
+        setExecutionResult({ success: false, error: response.error });
       }
     } catch (error: any) {
-      addExecutionLog({ message: `执行错误：${error.message || '未知错误'}` });
-      setExecutionResult({
-        success: false,
-        error: error.message,
-      });
+      addExecutionLog({ message: `错误: ${error.message}`, type: 'error' });
+      setExecutionResult({ success: false, error: error.message });
     } finally {
       setIsExecuting(false);
     }
   };
 
-  const handleClearLogs = () => {
+  const handleClear = () => {
     setExecutionResult(null);
   };
 
+  // 节点类型对应的图标和颜色
+  const getNodeTypeConfig = (type: string) => {
+    const configs: Record<string, { icon: React.ReactNode; color: string }> = {
+      input: { icon: <ClockCircleOutlined />, color: '#22c55e' },
+      llm: { icon: <BugOutlined />, color: '#8b5cf6' },
+      tool: { icon: <BugOutlined />, color: '#f59e0b' },
+      output: { icon: <CheckCircleOutlined />, color: '#3b82f6' },
+      system: { icon: <ClockCircleOutlined />, color: '#6b7280' },
+      success: { icon: <CheckCircleOutlined />, color: '#10b981' },
+      error: { icon: <ExclamationCircleOutlined />, color: '#ef4444' },
+    };
+    return configs[type] || configs.system;
+  };
+
   return (
-    <Drawer
-      title={
-        <span>
-          <BugOutlined /> 调试面板
-        </span>
-      }
-      placement="right"
-      size="large"
-      open={debugDrawerOpen}
-      onClose={() => setDebugDrawerOpen(false)}
-      footer={null}
-      styles={{
-        body: { padding: '20px' },
-        header: { borderBottom: '1px solid #e8e8e8' },
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <div>
-          <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>输入测试文本</Title>
-          <TextArea
-            rows={4}
-            value={debugInput}
-            onChange={(e) => setDebugInput(e.target.value)}
-            placeholder="请输入要测试的文本内容..."
-            disabled={isExecuting}
-            style={{ borderRadius: 8 }}
-          />
+    <div className={`debug-panel ${debugDrawerOpen ? 'open' : 'collapsed'}`}>
+      {/* 面板头部 */}
+      <div className="debug-panel-header">
+        <div className="debug-panel-title">
+          <BugOutlined style={{ fontSize: 16, color: '#6b7280' }} />
+          <span style={{ fontWeight: 500 }}>调试面板</span>
+          {executionLogs.length > 0 && (
+            <Tag style={{ marginLeft: 8 }}>
+              {executionLogs.length}
+            </Tag>
+          )}
         </div>
-
-        <Button
-          type="primary"
-          icon={isExecuting ? <LoadingOutlined spin /> : <PlayCircleOutlined />}
-          onClick={handleRun}
-          disabled={!debugInput.trim() || isExecuting}
-          block
-          size="large"
-          style={{ borderRadius: 8, fontWeight: 500 }}
-        >
-          {isExecuting ? '执行中...' : '运行工作流'}
-        </Button>
-
-        <Divider style={{ margin: '8px 0 16px' }} />
-
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Title level={5} style={{ margin: 0, color: '#1e40af' }}>执行日志</Title>
-            <Button size="small" onClick={handleClearLogs} style={{ borderRadius: 4 }}>
+        <div className="debug-panel-actions">
+          {debugDrawerOpen && (
+            <Button
+              size="small"
+              type="text"
+              onClick={handleClear}
+              disabled={executionLogs.length === 0}
+            >
               清空
             </Button>
+          )}
+          <Button
+            type="text"
+            size="small"
+            icon={debugDrawerOpen ? <DownOutlined /> : <UpOutlined />}
+            onClick={() => setDebugDrawerOpen(!debugDrawerOpen)}
+          />
+        </div>
+      </div>
+
+      {/* 面板内容 */}
+      {debugDrawerOpen && (
+        <div className="debug-panel-content">
+          {/* 第一栏：输入区域 */}
+          <div className="debug-input-section">
+            <div style={{ marginBottom: 12 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>测试输入</Text>
+            </div>
+            <TextArea
+              rows={4}
+              value={debugInput}
+              onChange={(e) => setDebugInput(e.target.value)}
+              placeholder="输入测试内容..."
+              style={{ marginBottom: 12, resize: 'none' }}
+            />
+            <Button
+              type="primary"
+              icon={isExecuting ? <LoadingOutlined spin /> : <PlayCircleOutlined />}
+              onClick={handleRun}
+              disabled={!debugInput.trim() || isExecuting}
+              block
+              size="middle"
+            >
+              {isExecuting ? '执行中...' : '运行'}
+            </Button>
           </div>
-          <div
-            style={{
-              height: 300,
-              overflow: 'auto',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              padding: 12,
-              backgroundColor: '#f9fafb',
-              fontFamily: 'monospace',
-              fontSize: 12,
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)',
-            }}
-          >
+
+          {/* 第二栏：执行日志 */}
+          <div className="debug-logs-section">
+            <div style={{ marginBottom: 12 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>执行日志</Text>
+            </div>
             {executionLogs.length === 0 ? (
-              <Text type="secondary" style={{ color: '#9ca3af' }}>暂无日志</Text>
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无日志" />
             ) : (
-              executionLogs.map((log, index) => (
-                <div
-                  key={index}
-                  style={{
-                    marginBottom: 8,
-                    paddingBottom: 8,
-                    borderBottom: index < executionLogs.length - 1 ? '1px dashed #e5e7eb' : 'none',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 8,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <Text code style={{
-                    backgroundColor: '#e0f2fe',
-                    color: '#0369a1',
-                    border: 'none',
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    fontSize: 11,
-                    whiteSpace: 'nowrap',
-                  }}>{`[${log.timestamp}]`}</Text>
-
-                  {log.durationMs && log.durationMs > 0 && (
-                    <Text code style={{
-                      backgroundColor: log.nodeType === 'llm' ? '#fef3c7' :
-                                      log.nodeType === 'tool' ? '#fce7f3' :
-                                      log.nodeType === 'input' ? '#dcfce7' :
-                                      log.nodeType === 'output' ? '#dbeafe' : '#f3f4f6',
-                      color: log.nodeType === 'llm' ? '#d97706' :
-                            log.nodeType === 'tool' ? '#db2777' :
-                            log.nodeType === 'input' ? '#16a34a' :
-                            log.nodeType === 'output' ? '#2563eb' : '#6b7280',
-                      border: 'none',
-                      padding: '2px 6px',
-                      borderRadius: 4,
-                      fontSize: 11,
-                      whiteSpace: 'nowrap',
-                    }}>{`${log.durationMs}ms`}</Text>
-                  )}
-
-                  <span style={{ color: '#374151', fontSize: 12, lineHeight: 1.5, flex: 1 }}>
-                    {log.message}
-                  </span>
-                </div>
-              ))
+              <Timeline style={{ paddingLeft: 0 }}>
+                {executionLogs.map((log, index) => {
+                  const config = getNodeTypeConfig(log.type || 'system');
+                  return (
+                    <Timeline.Item
+                      key={index}
+                      dot={
+                        <div
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            background: config.color,
+                          }}
+                        />
+                      }
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ marginBottom: 4 }}>
+                            <Text style={{ fontSize: 13 }}>{log.message}</Text>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {log.nodeLabel && (
+                              <Tag
+                                style={{
+                                  background: `${config.color}20`,
+                                  borderColor: config.color,
+                                  color: config.color,
+                                  fontSize: 11,
+                                }}
+                              >
+                                {log.nodeLabel}
+                              </Tag>
+                            )}
+                            {log.durationMs && log.durationMs > 0 && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: '#6b7280',
+                                  background: '#f3f4f6',
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  fontFamily: 'monospace',
+                                }}
+                              >
+                                {log.durationMs}ms
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {log.output && (
+                        <Collapse ghost style={{ marginTop: 8 }}>
+                          <Panel
+                            header={
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                查看输出
+                              </Text>
+                            }
+                            key="1"
+                          >
+                            <div
+                              style={{
+                                padding: 8,
+                                background: '#f9fafb',
+                                borderRadius: 4,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                maxHeight: 200,
+                                overflow: 'auto',
+                              }}
+                            >
+                              {log.output}
+                            </div>
+                          </Panel>
+                        </Collapse>
+                      )}
+                    </Timeline.Item>
+                  );
+                })}
+              </Timeline>
             )}
+          </div>
+
+          {/* 第三栏：执行结果 */}
+          <div className="debug-result-section">
+            <div style={{ marginBottom: 12 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>执行结果</Text>
+            </div>
+
+            {!executionResult && !isExecuting && (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="点击运行查看结果"
+                style={{ marginTop: 40 }}
+              />
+            )}
+
             {isExecuting && (
-              <div style={{ textAlign: 'center', padding: 16 }}>
-                <Spin size="small" />
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <Spin size="large" />
+                <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>
+                  执行中...
+                </Text>
+              </div>
+            )}
+
+            {executionResult?.success && (
+              <div className="debug-result-content">
+                {executionResult.output && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div
+                      style={{
+                        padding: 12,
+                        background: '#f0fdf4',
+                        border: '1px solid #86efac',
+                        borderRadius: 8,
+                        maxHeight: 180,
+                        overflow: 'auto',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: 13,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {executionResult.output}
+                      </Text>
+                    </div>
+                  </div>
+                )}
+
+                {executionResult.audioUrl && (
+                  <div
+                    style={{
+                      padding: 12,
+                      background: '#eff6ff',
+                      border: '1px solid #93c5fd',
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div style={{ marginBottom: 8 }}>
+                      <Tag color="blue" style={{ fontSize: 11 }}>音频输出</Tag>
+                    </div>
+                    <audio
+                      controls
+                      src={executionResult.audioUrl}
+                      style={{ width: '100%', height: 36 }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {executionResult?.error && (
+              <div
+                style={{
+                  padding: 12,
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: 8,
+                  color: '#dc2626',
+                  fontSize: 13,
+                }}
+              >
+                <ExclamationCircleOutlined style={{ marginRight: 8 }} />
+                {executionResult.error}
               </div>
             )}
           </div>
         </div>
-
-        {/* 节点输出详情 */}
-        {executionLogs.some(log => log.output) && (
-          <div>
-            <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>节点输出</Title>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {executionLogs.filter(log => log.output).map((log, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: 12,
-                    background: '#f8fafc',
-                    borderRadius: 8,
-                    border: '1px solid #e2e8f0',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <Tag color={
-                      log.nodeType === 'llm' ? 'gold' :
-                      log.nodeType === 'tool' ? 'magenta' :
-                      log.nodeType === 'input' ? 'green' :
-                      log.nodeType === 'output' ? 'blue' : 'default'
-                    }>
-                      {log.nodeType}
-                    </Tag>
-                    <Text strong style={{ fontSize: 13 }}>{log.nodeLabel || log.nodeType}</Text>
-                    {log.durationMs && log.durationMs > 0 && (
-                      <Text type="secondary" style={{ fontSize: 11 }}>{log.durationMs}ms</Text>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      padding: 12,
-                      background: '#fff',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      maxHeight: 200,
-                      overflow: 'auto',
-                    }}
-                  >
-                    {log.output}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 执行结果 - 文本和音频并列显示 */}
-        {executionResult?.success && (executionResult?.output || executionResult?.audioUrl) && (
-          <div>
-            <Title level={5} style={{ marginBottom: 12, color: '#1e40af' }}>执行结果</Title>
-            <div style={{
-              display: 'flex',
-              gap: 16,
-              flexDirection: executionResult?.audioUrl ? 'row' : 'column',
-            }}>
-              {/* 文本输出 */}
-              {executionResult?.output && (
-                <div style={{
-                  flex: executionResult?.audioUrl ? 1 : 'none',
-                  minWidth: executionResult?.audioUrl ? 200 : 'auto',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                    gap: 8,
-                  }}>
-                    <span style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: '#16a34a',
-                      background: '#dcfce7',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                    }}>📝 文本内容</span>
-                  </div>
-                  <div
-                    style={{
-                      padding: 16,
-                      border: '1px solid #86efac',
-                      borderRadius: 8,
-                      backgroundColor: '#f0fdf4',
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                      maxHeight: 300,
-                      overflow: 'auto',
-                    }}
-                  >
-                    {executionResult.output}
-                  </div>
-                </div>
-              )}
-
-              {/* 音频输出 */}
-              {executionResult?.audioUrl && (
-                <div style={{
-                  flex: executionResult?.output ? 1 : 'none',
-                  minWidth: executionResult?.output ? 200 : 'auto',
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                    gap: 8,
-                  }}>
-                    <span style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: '#2563eb',
-                      background: '#dbeafe',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                    }}>🎵 音频播放</span>
-                  </div>
-                  <div
-                    style={{
-                      padding: 16,
-                      border: '1px solid #93c5fd',
-                      borderRadius: 8,
-                      backgroundColor: '#eff6ff',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minHeight: 120,
-                    }}
-                  >
-                    <audio
-                      controls
-                      src={executionResult.audioUrl}
-                      style={{ width: '100%', borderRadius: 8 }}
-                    />
-                    <Text type="secondary" style={{ fontSize: 12, marginTop: 8, color: '#6b7280' }}>
-                      点击播放按钮收听合成音频
-                    </Text>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {executionResult?.error && (
-          <div>
-            <Title level={5} style={{ marginBottom: 12, color: '#dc2626' }}>错误信息</Title>
-            <div
-              style={{
-                padding: 16,
-                border: '1px solid #fca5a5',
-                borderRadius: 8,
-                backgroundColor: '#fef2f2',
-                color: '#dc2626',
-                fontFamily: 'monospace',
-                fontSize: 13,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
-              }}
-            >
-              {executionResult.error}
-            </div>
-          </div>
-        )}
-      </div>
-    </Drawer>
+      )}
+    </div>
   );
 };
 

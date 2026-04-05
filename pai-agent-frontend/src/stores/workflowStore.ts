@@ -11,9 +11,12 @@ interface WorkflowState {
   nodes: Node[];
   edges: Edge[];
 
+  // 保存状态
+  hasUnsavedChanges: boolean;
+
   // 执行状态
   isExecuting: boolean;
-  executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string }[];
+  executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string }[];
   executionResult: ExecutionResponse | null;
 
   // 调试抽屉状态
@@ -39,9 +42,13 @@ interface WorkflowState {
   addEdge: (edge: Edge) => void;
   removeEdge: (id: string) => void;
 
+  // Actions - 保存状态
+  markAsSaved: () => void;
+  markAsUnsaved: () => void;
+
   // Actions - 执行
   setIsExecuting: (executing: boolean) => void;
-  addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string }) => void;
+  addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string }) => void;
   setExecutionResult: (result: ExecutionResponse | null) => void;
 
   // Actions - 调试抽屉
@@ -74,6 +81,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     },
   ] as Node[],
   edges: [],
+  hasUnsavedChanges: false,
   isExecuting: false,
   executionLogs: [],
   executionResult: null,
@@ -160,11 +168,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
 
   // React Flow 管理
-  setNodes: (nodes) => set({ nodes }),
-  setEdges: (edges) => set({ edges }),
+  setNodes: (nodes) => set({ nodes, hasUnsavedChanges: true }),
+  setEdges: (edges) => set({ edges, hasUnsavedChanges: true }),
 
   addNode: (node) => {
-    set((state) => ({ nodes: [...state.nodes, node] }));
+    set((state) => ({ nodes: [...state.nodes, node], hasUnsavedChanges: true }));
   },
 
   updateNode: (id, data) => {
@@ -172,6 +180,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       nodes: state.nodes.map((node) =>
         node.id === id ? { ...node, data: { ...node.data, ...data } } : node
       ),
+      hasUnsavedChanges: true,
     }));
   },
 
@@ -181,18 +190,24 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       edges: state.edges.filter(
         (edge) => edge.source !== id && edge.target !== id
       ),
+      hasUnsavedChanges: true,
     }));
   },
 
   addEdge: (edge) => {
-    set((state) => ({ edges: [...state.edges, edge] }));
+    set((state) => ({ edges: [...state.edges, edge], hasUnsavedChanges: true }));
   },
 
   removeEdge: (id) => {
     set((state) => ({
       edges: state.edges.filter((edge) => edge.id !== id),
+      hasUnsavedChanges: true,
     }));
   },
+
+  // 保存状态管理
+  markAsSaved: () => set({ hasUnsavedChanges: false }),
+  markAsUnsaved: () => set({ hasUnsavedChanges: true }),
 
   // 执行状态管理
   setIsExecuting: (executing) => set({ isExecuting: executing }),
@@ -207,6 +222,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         nodeId: log.nodeId,
         nodeLabel: log.nodeLabel,
         output: log.output,
+        type: log.type || 'system',
       }],
     }));
   },

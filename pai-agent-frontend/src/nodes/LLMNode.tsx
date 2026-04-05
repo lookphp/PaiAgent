@@ -1,48 +1,66 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Typography, Tag } from 'antd';
-import { ApiOutlined } from '@ant-design/icons';
+import { RobotOutlined } from '@ant-design/icons';
 import './index.css';
 
 const { Text } = Typography;
+
+// 模型显示名称映射
+const modelNameMap: Record<string, string> = {
+  'deepseek-chat': 'DeepSeek',
+  'qwen-max': '通义千问-Max',
+  'qwen-plus': '通义千问-Plus',
+  'qwen-turbo': '通义千问-Turbo',
+  'ai-ping': 'AI Ping',
+  'zhipu-chat': '智谱 AI',
+};
 
 const LLMNode: React.FC<NodeProps> = (props) => {
   const data = props.data as any;
   const selected = props.selected;
 
+  const modelName = modelNameMap[data?.model] || data?.model || '大模型';
+  const temperature = data?.temperature;
+
   return (
     <div className={`flow-node llm-node ${selected ? 'selected' : ''}`}>
-      <div className="node-icon gradient-purple">
-        <ApiOutlined />
+      {/* 节点头部：图标 + 标题 */}
+      <div className="node-header">
+        <div className="node-icon llm">
+          <RobotOutlined />
+        </div>
+        <div className="node-title">
+          <Text strong>{data?.label || '大模型'}</Text>
+          <Text type="secondary" className="node-subtitle">{modelName}</Text>
+        </div>
       </div>
-      <div className="node-content">
-        <Text strong>{data?.label || '大模型'}</Text>
-        {data?.model && (
-          <Tag className="node-tag" style={{ marginTop: 4 }}>{data.model}</Tag>
-        )}
-        {data?.temperature && (
-          <Tag className="node-tag" color="orange" style={{ marginTop: 4 }}>
-            T={data.temperature}
-          </Tag>
-        )}
-        {data?.prompt && (
-          <Text
-            type="secondary"
-            style={{
-              fontSize: 11,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              marginTop: 4,
-              display: 'block',
-            }}
-          >
-            {data.prompt.substring(0, 30)}{data.prompt.length > 30 ? '...' : ''}
-          </Text>
+
+      {/* 标签区域 */}
+      <div className="node-tags">
+        {temperature !== undefined && (
+          <Tag className="node-tag">T={temperature}</Tag>
         )}
       </div>
-      <Handle type="target" position={Position.Top} className="node-handle" />
-      <Handle type="source" position={Position.Bottom} className="node-handle" />
+
+      {/* 状态指示器 */}
+      <div className="node-status">
+        <div className="node-status-badge idle" />
+      </div>
+
+      {/* 输入连接点 */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="node-handle"
+      />
+
+      {/* 输出连接点 */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="node-handle"
+      />
     </div>
   );
 };

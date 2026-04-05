@@ -1,176 +1,135 @@
+/* 导入设计系统变量 */
+@import './styles/variables.css';
+
+/* ========== 应用容器 ========== */
 .app-container {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: var(--bg-canvas);
 }
 
-/* React Flow 样式覆盖 */
-.react-flow__edge-path {
-  stroke-width: 2px;
-  marker-end: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="7" viewBox="0 0 10 7"><polygon points="0 0, 10 3.5, 0 7" fill="%231890ff"/></svg>');
-}
-
-/* 顶部导航栏样式 */
+/* ========== 顶部导航栏 ========== */
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
-  height: 64px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 0 20px;
+  height: var(--header-height);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
   z-index: 100;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.header-search .ant-input {
-  border-radius: 20px;
-  background: #f8fafc;
-  border-color: #e2e8f0;
-  transition: all 0.2s ease;
-}
-
-.header-search .ant-input:focus {
-  background: #fff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-/* 当前工作流信息样式 */
-.current-workflow-info {
-  display: flex;
-  align-items: center;
-  padding: 8px 14px;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  font-size: 13px;
-  gap: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
-}
-
-.current-workflow-info:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
-}
-
-.workflow-name {
-  font-weight: 600;
-  color: #1e40af;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.workflow-updated-time {
-  color: #94a3b8;
-  font-size: 12px;
-  margin-left: 8px;
-}
-
-.new-workflow-hint {
-  display: flex;
-  align-items: center;
-  color: #64748b;
-  font-size: 13px;
-  padding: 8px 14px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px dashed #cbd5e1;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-text {
-  font-size: 26px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #5b8c99 0%, #3a6a7a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 0.5px;
+  flex: 1;
+  min-width: 0;
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
-/* 主体内容区域 */
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+/* 工作流信息 */
+.current-workflow-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--primary-lighter);
+  border: 1px solid var(--primary-light);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--primary);
+  max-width: 280px;
+}
+
+.workflow-name {
+  font-weight: 500;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.new-workflow-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+/* ========== 主体内容区域 ========== */
 .app-body {
   display: flex;
   flex: 1;
   overflow: hidden;
-  margin: 16px;
-  gap: 16px;
+  margin: var(--spacing-md);
+  margin-bottom: 48px;
+  gap: var(--spacing-md);
+  transition: margin-bottom var(--transition-normal);
 }
 
+/* 左侧节点面板 */
 .sidebar {
-  width: 280px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
 }
 
+/* 中间画布区域 */
 .main-content {
   flex: 1;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  position: relative;
 }
 
+/* 右侧配置面板 */
 .config-panel {
-  width: 360px;
+  width: var(--config-panel-width);
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
 }
 
-/* React Flow 样式覆盖 */
-.react-flow__node {
-  font-size: 14px;
-}
-
-/* 去掉 React Flow 默认的节点选中边框 */
-.react-flow__node-selected,
-.react-flow__node:focus,
-.react-flow__node-with-edge-context {
-  outline: none !important;
-}
-
-.react-flow__handle {
-  width: 8px;
-  height: 8px;
-}
-
-.react-flow__edge-path {
-  stroke-width: 2px;
-}
-
-/* React Flow 容器 */
+/* ========== React Flow 基础样式 ========== */
 .react-flow__container {
   position: absolute;
   width: 100%;
@@ -179,77 +138,497 @@
   left: 0;
 }
 
-/* 节点基础样式 */
 .react-flow__node {
   cursor: pointer;
+  font-size: 14px;
 }
 
-/* 滚动条样式 */
+/* 去掉默认选中边框 */
+.react-flow__node-selected,
+.react-flow__node:focus,
+.react-flow__node-with-edge-context {
+  outline: none !important;
+}
+
+/* 覆盖默认节点尺寸 */
+.react-flow__node-input,
+.react-flow__node-default,
+.react-flow__node-output,
+.react-flow__node-group {
+  padding: 0;
+  margin: 0;
+  width: auto;
+  height: auto;
+}
+
+/* 连接点样式 */
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--bg-primary);
+  border-radius: 50%;
+  background: var(--primary);
+  transition: var(--transition-fast);
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.2);
+}
+
+/* 连线样式 */
+.react-flow__edge-path {
+  stroke-width: 2px;
+  stroke: var(--primary-light);
+  transition: var(--transition-normal);
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--primary);
+  stroke-width: 3px;
+}
+
+/* 动画连线 */
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 8 4;
+  animation: flowAnimation 0.5s linear infinite;
+}
+
+@keyframes flowAnimation {
+  from {
+    stroke-dashoffset: 12;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 连线箭头 */
+.react-flow__edge-path {
+  marker-end: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="7" viewBox="0 0 10 7"><polygon points="0 0, 10 3.5, 0 7" fill="%232563eb"/></svg>');
+}
+
+/* 画布背景 */
+.react-flow__background {
+  background-color: var(--bg-secondary);
+}
+
+/* ========== 滚动条样式 ========== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
-  border-radius: 4px;
-  transition: background 0.2s;
+  background: var(--text-muted);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+  background: var(--text-tertiary);
 }
 
 ::-webkit-scrollbar-corner {
-  background: #f1f5f9;
+  background: transparent;
 }
 
-/* 工作流弹窗样式 */
+/* ========== 工作流弹窗样式 ========== */
 .workflow-modal .ant-modal {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
 .workflow-modal .ant-modal-header {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border-bottom: 1px solid #bae6fd;
-  padding: 16px 24px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
 }
 
 .workflow-modal .ant-modal-title {
   font-weight: 600;
-  color: #1e40af;
+  color: var(--text-primary);
 }
 
 .workflow-modal .ant-modal-body {
-  padding: 20px 24px;
+  padding: 16px 20px;
 }
 
-.workflow-modal .ant-table {
+/* ========== Ant Design 组件样式覆盖 ========== */
+/* 按钮 */
+.ant-btn {
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+}
+
+.ant-btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ant-btn-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* 输入框 */
+.ant-input {
+  border-radius: var(--radius-md);
+  border-color: var(--border);
+  transition: var(--transition-fast);
+}
+
+.ant-input:hover,
+.ant-input:focus {
+  border-color: var(--primary);
+}
+
+.ant-input-affix-wrapper {
+  border-radius: var(--radius-md);
+}
+
+/* 选择器 */
+.ant-select .ant-select-selector {
+  border-radius: var(--radius-md) !important;
+  border-color: var(--border) !important;
+}
+
+.ant-select:hover .ant-select-selector {
+  border-color: var(--primary) !important;
+}
+
+/* 标签 */
+.ant-tag {
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+/* 抽屉 */
+.ant-drawer-content {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.ant-drawer-header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+}
+
+.ant-drawer-title {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* 分割线 */
+.ant-divider {
+  border-color: var(--border);
+}
+
+/* ========== 通用工具类 ========== */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+/* ========== 节点配置面板 ========== */
+.node-config-panel {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 配置面板头部 */
+.node-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.node-config-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.node-config-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* 配置面板内容 */
+.node-config-body {
+  flex: 1;
+  overflow: auto;
+  padding: 0 20px 20px;
+}
+
+.node-config-body .ant-tabs {
+  margin-top: 16px;
+}
+
+.node-config-body .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+.node-config-body .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.node-config-body .ant-form-item-label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.node-config-body .ant-form-item-extra {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* 配置卡片 */
+.node-config-body .ant-card {
+  border-radius: var(--radius-md);
+  border-color: var(--border);
+}
+
+.node-config-body .ant-card-head {
+  background: var(--bg-secondary);
+  border-bottom-color: var(--border);
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.node-config-body .ant-card-head-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.node-config-body .ant-card-body {
+  padding: 12px;
+}
+
+/* 配置面板底部 */
+.node-config-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.node-config-footer .ant-btn {
+  height: 40px;
+  font-weight: 500;
+}
+
+/* ========== 调试面板（底部） ========== */
+.debug-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  transition: all var(--transition-normal);
+}
+
+.debug-panel.collapsed {
+  height: 48px;
+}
+
+.debug-panel.open {
+  height: 360px;
+}
+
+/* 调试面板头部 */
+.debug-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 48px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.debug-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
 }
 
-.workflow-modal .ant-table-thead > tr > th {
-  background: #f8fafc;
-  font-weight: 600;
-  color: #334155;
-  padding: 14px 16px;
+.debug-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.workflow-modal .ant-table-tbody > tr > td {
-  padding: 12px 16px;
+/* 调试面板内容 - 三栏布局 */
+.debug-panel-content {
+  display: flex;
+  height: calc(100% - 48px);
+  overflow: hidden;
 }
 
-.workflow-modal .ant-table-tbody > tr:hover > td {
-  background: #f0f9ff;
-  transition: background 0.15s ease;
+/* 第一栏：输入区域 */
+.debug-input-section {
+  width: 25%;
+  min-width: 240px;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
 }
 
-.workflow-modal .ant-empty {
-  margin: 40px 0;
+.debug-input-section .ant-input {
+  flex: 1;
+  resize: none;
+}
+
+/* 第二栏：执行日志 */
+.debug-logs-section {
+  width: 50%;
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+  background: var(--bg-primary);
+}
+
+.debug-logs-section .ant-timeline {
+  padding-top: 4px;
+}
+
+.debug-logs-section .ant-timeline-item {
+  padding-bottom: 16px;
+}
+
+.debug-logs-section .ant-timeline-item-content {
+  margin-left: 20px;
+}
+
+.debug-logs-section .ant-timeline-item-tail {
+  left: 4px;
+}
+
+.debug-logs-section .ant-timeline-item-head {
+  left: 0;
+}
+
+/* 第三栏：执行结果 */
+.debug-result-section {
+  width: 25%;
+  min-width: 240px;
+  max-width: 360px;
+  padding: 16px;
+  overflow: auto;
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border);
+}
+
+.debug-result-content {
+  max-height: 100%;
+}
+
+.debug-result-content audio {
+  width: 100%;
+  height: 36px;
+}
+
+/* 调试面板滚动条 */
+.debug-logs-section::-webkit-scrollbar,
+.debug-result-section::-webkit-scrollbar {
+  width: 4px;
+}
+
+.debug-logs-section::-webkit-scrollbar-thumb,
+.debug-result-section::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
+
+/* 调试面板响应式 */
+@media (max-width: 1400px) {
+  .debug-input-section {
+    width: 280px;
+    min-width: 280px;
+  }
+
+  .debug-result-section {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .debug-panel.open {
+    height: 500px;
+  }
+
+  .debug-panel-content {
+    flex-direction: column;
+  }
+
+  .debug-input-section,
+  .debug-logs-section,
+  .debug-result-section {
+    width: 100%;
+    max-width: none;
+    min-width: auto;
+    border-right: none;
+    border-left: none;
+  }
+
+  .debug-input-section {
+    height: 120px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .debug-logs-section {
+    flex: 1;
+    height: 50%;
+  }
+
+  .debug-result-section {
+    height: 150px;
+    border-top: 1px solid var(--border);
+  }
 }

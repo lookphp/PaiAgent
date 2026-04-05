@@ -12,14 +12,28 @@ const InputNode: React.FC<NodeProps> = (props) => {
 
   return (
     <div className={`flow-node input-node ${selected ? 'selected' : ''}`}>
-      <div className="node-icon gradient-green">
-        <UserOutlined />
+      {/* 节点头部：图标 + 标题 */}
+      <div className="node-header">
+        <div className="node-icon input">
+          <UserOutlined />
+        </div>
+        <div className="node-title">
+          <Text strong>{data?.label || '用户输入'}</Text>
+          <Text type="secondary" className="node-subtitle">起始节点</Text>
+        </div>
       </div>
-      <div className="node-content">
-        <Text strong>{data?.label || '用户输入'}</Text>
-        <Text type="secondary">起始节点</Text>
+
+      {/* 状态指示器 */}
+      <div className="node-status">
+        <div className="node-status-badge idle" />
       </div>
-      <Handle type="source" position={Position.Bottom} className="node-handle" />
+
+      {/* 输出连接点 */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="node-handle"
+      />
     </div>
   );
 };
