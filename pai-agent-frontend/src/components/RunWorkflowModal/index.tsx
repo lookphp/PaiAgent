@@ -29,6 +29,7 @@ import {
   ClockCircleOutlined,
   EditOutlined,
   CloseOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
@@ -643,10 +644,13 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           {/* 编辑区域 */}
           <Card
             title={
-              <span>
-                <EditOutlined style={{ marginRight: 8 }} />
-                编辑输出内容
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>
+                  <EditOutlined style={{ marginRight: 8 }} />
+                  编辑输出内容
+                </span>
+                <Tag style={{ fontSize: 11 }}>{editedOutput?.length || 0} 字符</Tag>
+              </div>
             }
             size="small"
           >
@@ -721,7 +725,25 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
               {/* 文本输出 */}
               {result.output && (
                 <Card
-                  title={<span><FileTextOutlined /> 文本输出</span>}
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span><FileTextOutlined /> 文本输出</span>
+                      <Space>
+                        <Tag style={{ fontSize: 11 }}>{result.output.length} 字符</Tag>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(result.output || '');
+                            message.success('已复制到剪贴板');
+                          }}
+                        >
+                          复制
+                        </Button>
+                      </Space>
+                    </div>
+                  }
                   size="small"
                   style={{ marginBottom: 16 }}
                 >

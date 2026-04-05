@@ -586,12 +586,13 @@ audio::-webkit-media-controls-timeline {
   display: flex !important;
 }
 
-/* react-h5-audio-player 自定义样式 */
+/* react-h5-audio-player 自定义样式 - 现代简洁风格 */
 .react-h5-audio-player {
-  border-radius: 8px !important;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%) !important;
-  padding: 8px 12px !important;
-  border: 1px solid #d6e4ff !important;
+  border-radius: 12px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  padding: 16px 20px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
 .react-h5-audio-player .rhap_container {
@@ -599,69 +600,136 @@ audio::-webkit-media-controls-timeline {
 }
 
 .react-h5-audio-player .rhap_main {
-  gap: 12px !important;
+  gap: 16px !important;
+  align-items: center !important;
+}
+
+/* 播放/暂停按钮 - 圆角矩形设计 */
+.react-h5-audio-player .rhap_main-controls {
+  flex: 0 0 auto !important;
 }
 
 .react-h5-audio-player .rhap_main-controls-button {
-  color: #1677ff !important;
-  font-size: 24px !important;
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 50% !important;
-  background: #fff !important;
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.2) !important;
-  transition: all 0.2s ease !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .react-h5-audio-player .rhap_main-controls-button:hover {
-  transform: scale(1.1) !important;
-  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+}
+
+.react-h5-audio-player .rhap_main-controls-button:active {
+  transform: translateY(0) !important;
+}
+
+/* 进度条区域 */
+.react-h5-audio-player .rhap_progress-section {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
 }
 
 .react-h5-audio-player .rhap_progress-container {
   padding: 0 !important;
+  margin: 0 !important;
 }
 
+/* 进度条轨道 */
 .react-h5-audio-player .rhap_progress-bar {
-  background: #d6e4ff !important;
+  background: #e2e8f0 !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 进度条填充 */
+.react-h5-audio-player .rhap_progress-filled {
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 进度指示器 */
+.react-h5-audio-player .rhap_progress-indicator {
+  background: #fff !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  border: 3px solid #3b82f6 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
+  top: -5px !important;
+  transition: transform 0.15s ease !important;
+}
+
+.react-h5-audio-player .rhap_progress-indicator:hover {
+  transform: scale(1.15) !important;
+}
+
+/* 时间显示 */
+.react-h5-audio-player .rhap_time {
+  color: #64748b !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  letter-spacing: 0.02em !important;
+}
+
+.react-h5-audio-player .rhap_current-time {
+  color: #3b82f6 !important;
+  font-weight: 600 !important;
+}
+
+/* 音量控制 */
+.react-h5-audio-player .rhap_volume-controls {
+  flex: 0 0 auto !important;
+  align-items: center !important;
+}
+
+.react-h5-audio-player .rhap_volume-button {
+  color: #64748b !important;
+  font-size: 20px !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-h5-audio-player .rhap_volume-button:hover {
+  color: #3b82f6 !important;
+  background: #f1f5f9 !important;
+}
+
+.react-h5-audio-player .rhap_volume-bar-area {
+  width: 80px !important;
+}
+
+.react-h5-audio-player .rhap_volume-bar {
+  background: #e2e8f0 !important;
   height: 6px !important;
   border-radius: 3px !important;
 }
 
-.react-h5-audio-player .rhap_progress-filled {
-  background: linear-gradient(90deg, #1677ff, #69b1ff) !important;
+.react-h5-audio-player .rhap_volume-filled {
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%) !important;
   border-radius: 3px !important;
 }
 
-.react-h5-audio-player .rhap_progress-indicator {
-  background: #1677ff !important;
-  width: 14px !important;
-  height: 14px !important;
-  border-radius: 50% !important;
-  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.4) !important;
-  top: -4px !important;
-}
-
-.react-h5-audio-player .rhap_time {
-  color: #1677ff !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace !important;
-}
-
-.react-h5-audio-player .rhap_volume-button {
-  color: #1677ff !important;
-}
-
-.react-h5-audio-player .rhap_volume-bar {
-  background: #d6e4ff !important;
-  width: 80px !important;
-  height: 4px !important;
-  border-radius: 2px !important;
-}
-
-.react-h5-audio-player .rhap_volume-filled {
-  background: #1677ff !important;
+/* 隐藏不需要的按钮 */
+.react-h5-audio-player .rhap_rewind-button,
+.react-h5-audio-player .rhap_forward-button {
+  display: none !important;
 }
 
 /* 调试面板滚动条 */

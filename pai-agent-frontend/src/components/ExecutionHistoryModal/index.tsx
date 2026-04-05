@@ -26,6 +26,7 @@ import {
   RobotOutlined,
   ToolOutlined,
   UserOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
@@ -313,7 +314,25 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
             {/* 输入 */}
             <Card
               size="small"
-              title={<span><FileTextOutlined /> 输入内容</span>}
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span><FileTextOutlined /> 输入内容</span>
+                  <Space>
+                    <Tag style={{ fontSize: 11 }}>{selectedHistory.inputText?.length || 0} 字符</Tag>
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CopyOutlined />}
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedHistory.inputText || '');
+                        message.success('已复制到剪贴板');
+                      }}
+                    >
+                      复制
+                    </Button>
+                  </Space>
+                </div>
+              }
               style={{ marginBottom: 16 }}
             >
               <div
@@ -333,7 +352,25 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
             {selectedHistory.outputText && (
               <Card
                 size="small"
-                title={<span><FileTextOutlined /> 输出内容</span>}
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span><FileTextOutlined /> 输出内容</span>
+                    <Space>
+                      <Tag style={{ fontSize: 11 }}>{selectedHistory.outputText.length} 字符</Tag>
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedHistory.outputText || '');
+                          message.success('已复制到剪贴板');
+                        }}
+                      >
+                        复制
+                      </Button>
+                    </Space>
+                  </div>
+                }
                 style={{ marginBottom: 16 }}
               >
                 <div
@@ -353,28 +390,49 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
             )}
 
             {/* LLM 输出 */}
-            {extractLlmOutput(selectedHistory.executionLogs) && (
-              <Card
-                size="small"
-                title={<span><RobotOutlined style={{ color: '#8b5cf6' }} /> LLM 输出</span>}
-                style={{ marginBottom: 16 }}
-              >
-                <div
-                  style={{
-                    padding: 12,
-                    background: '#f5f3ff',
-                    borderRadius: 6,
-                    maxHeight: 200,
-                    overflow: 'auto',
-                    border: '1px solid #e9d5ff',
-                  }}
+            {(() => {
+              const llmOutput = extractLlmOutput(selectedHistory.executionLogs);
+              return llmOutput && (
+                <Card
+                  size="small"
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span><RobotOutlined style={{ color: '#8b5cf6' }} /> LLM 输出</span>
+                      <Space>
+                        <Tag color="purple" style={{ fontSize: 11 }}>{llmOutput.length} 字符</Tag>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(llmOutput);
+                            message.success('已复制到剪贴板');
+                          }}
+                        >
+                          复制
+                        </Button>
+                      </Space>
+                    </div>
+                  }
+                  style={{ marginBottom: 16 }}
                 >
-                  <Text style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: 13 }}>
-                    {extractLlmOutput(selectedHistory.executionLogs)}
-                  </Text>
-                </div>
-              </Card>
-            )}
+                  <div
+                    style={{
+                      padding: 12,
+                      background: '#f5f3ff',
+                      borderRadius: 6,
+                      maxHeight: 200,
+                      overflow: 'auto',
+                      border: '1px solid #e9d5ff',
+                    }}
+                  >
+                    <Text style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: 13 }}>
+                      {llmOutput}
+                    </Text>
+                  </div>
+                </Card>
+              );
+            })()}
 
             {/* 音频 */}
             {selectedHistory.audioUrl && (

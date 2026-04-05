@@ -135,8 +135,9 @@ const SuspendedEditor: React.FC<SuspendedEditorProps> = () => {
         </Space>
       </div>
 
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text strong>输出内容（可编辑）</Text>
+        <Tag style={{ fontSize: 11 }}>{editedOutput?.length || 0} 字符</Tag>
       </div>
 
       <TextArea

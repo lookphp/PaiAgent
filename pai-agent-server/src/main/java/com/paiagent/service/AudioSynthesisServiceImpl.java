@@ -64,12 +64,22 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
 
     @Override
     public String synthesize(String text, String voice, String languageType, String model, String apiKey) {
+        SynthesisResult result = synthesizeWithTokens(text, voice, languageType, model, apiKey);
+        return result != null ? result.getAudioUrl() : null;
+    }
+
+    @Override
+    public SynthesisResult synthesizeWithTokens(String text, String voice, String languageType, String model, String apiKey) {
         log.info("调用阿里百炼 TTS 服务：textLength={}, voice={}, languageType={}, model={}",
                 text != null ? text.length() : 0, voice, languageType, model);
 
         if (apiKey == null || apiKey.isEmpty()) {
             log.warn("API Key 未配置，返回模拟音频 URL");
-            return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
+            return SynthesisResult.builder()
+                    .audioUrl("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3")
+                    .inputTokens(0)
+                    .outputTokens(0)
+                    .build();
         }
 
         if (text == null || text.isEmpty()) {
@@ -79,16 +89,16 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
         // 检查文本长度，超过限制则分段处理
         if (text.length() > MAX_TEXT_LENGTH) {
             log.info("文本长度 {} 超过限制 {}，启用分段合成", text.length(), MAX_TEXT_LENGTH);
-            return synthesizeLongText(text, voice, languageType, model, apiKey);
+            return synthesizeLongTextWithTokens(text, voice, languageType, model, apiKey);
         }
 
-        return synthesizeSingle(text, voice, languageType, model, apiKey);
+        return synthesizeSingleWithTokens(text, voice, languageType, model, apiKey);
     }
 
     /**
      * 合成单个文本片段
      */
-    private String synthesizeSingle(String text, String voice, String languageType, String model, String apiKey) {
+    private SynthesisResult synthesizeSingleWithTokens(String text, String voice, String languageType, String model, String apiKey) {
         try {
             // 规范化模型和音色
             String normalizedModel = model != null && !model.isEmpty() ? model : "qwen3-tts-flash";
@@ -114,6 +124,23 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
             String dashscopeAudioUrl = result.getOutput().getAudio().getUrl();
             log.info("阿里百炼返回音频 URL: {}", dashscopeAudioUrl);
 
+            // 尝试获取 token 使用量（TTS API 可能不返回，使用字符数估算）
+            int inputTokens = 0;
+            int outputTokens = 0;
+            try {
+                if (result.getUsage() != null) {
+                    inputTokens = result.getUsage().getInputTokens();
+                    outputTokens = result.getUsage().getOutputTokens();
+                }
+            } catch (Exception e) {
+                log.debug("无法获取 token 使用量: {}", e.getMessage());
+            }
+
+            // 如果 API 未返回 token，使用文本字符数作为输入 token 估算
+            if (inputTokens == 0 && text != null) {
+                inputTokens = text.length();
+            }
+
             // 下载音频数据
             byte[] audioData = downloadAudio(dashscopeAudioUrl);
             log.info("音频数据下载完成，大小: {} bytes", audioData.length);
@@ -122,7 +149,11 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
             String minioUrl = minioService.uploadAudio(audioData, "audio/wav", ".wav");
             log.info("音频已上传到 MinIO: {}", minioUrl);
 
-            return minioUrl;
+            return SynthesisResult.builder()
+                    .audioUrl(minioUrl)
+                    .inputTokens(inputTokens)
+                    .outputTokens(outputTokens)
+                    .build();
 
         } catch (ApiException e) {
             log.error("DashScope API 错误", e);
@@ -142,20 +173,26 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
     /**
      * 分段合成超长文本
      */
-    private String synthesizeLongText(String text, String voice, String languageType, String model, String apiKey) {
+    private SynthesisResult synthesizeLongTextWithTokens(String text, String voice, String languageType, String model, String apiKey) {
         // 1. 按句子分割文本
         List<String> segments = splitTextBySentences(text, MAX_TEXT_LENGTH);
         log.info("文本已分割为 {} 段", segments.size());
 
         // 2. 分别合成每段音频
         List<byte[]> audioSegments = new ArrayList<>();
+        int totalInputTokens = 0;
+        int totalOutputTokens = 0;
+
         for (int i = 0; i < segments.size(); i++) {
             String segment = segments.get(i);
             log.info("合成第 {}/{} 段，长度: {} 字符", i + 1, segments.size(), segment.length());
 
             try {
-                byte[] audioData = synthesizeSegment(segment, voice, languageType, model, apiKey);
+                SynthesisResult result = synthesizeSegmentWithTokens(segment, voice, languageType, model, apiKey);
+                byte[] audioData = downloadAudio(result.getAudioUrl());
                 audioSegments.add(audioData);
+                totalInputTokens += result.getInputTokens();
+                totalOutputTokens += result.getOutputTokens();
             } catch (Exception e) {
                 log.error("第 {} 段合成失败: {}", i + 1, e.getMessage());
                 // 继续合成其他段落
@@ -174,13 +211,17 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
         String minioUrl = minioService.uploadAudio(mergedAudio, "audio/wav", ".wav");
         log.info("合并音频已上传到 MinIO: {}", minioUrl);
 
-        return minioUrl;
+        return SynthesisResult.builder()
+                .audioUrl(minioUrl)
+                .inputTokens(totalInputTokens)
+                .outputTokens(totalOutputTokens)
+                .build();
     }
 
     /**
-     * 合成单个片段（返回音频数据）
+     * 合成单个片段（返回结果包含 token）
      */
-    private byte[] synthesizeSegment(String text, String voice, String languageType, String model, String apiKey) {
+    private SynthesisResult synthesizeSegmentWithTokens(String text, String voice, String languageType, String model, String apiKey) {
         try {
             String normalizedModel = model != null && !model.isEmpty() ? model : "qwen3-tts-flash";
             AudioParameters.Voice normalizedVoice = parseVoice(voice);
@@ -198,7 +239,29 @@ public class AudioSynthesisServiceImpl implements AudioSynthesisService {
             MultiModalConversationResult result = conv.call(param);
 
             String dashscopeAudioUrl = result.getOutput().getAudio().getUrl();
-            return downloadAudio(dashscopeAudioUrl);
+
+            // 尝试获取 token 使用量（TTS API 可能不返回，使用字符数估算）
+            int inputTokens = 0;
+            int outputTokens = 0;
+            try {
+                if (result.getUsage() != null) {
+                    inputTokens = result.getUsage().getInputTokens();
+                    outputTokens = result.getUsage().getOutputTokens();
+                }
+            } catch (Exception e) {
+                log.debug("无法获取 token 使用量: {}", e.getMessage());
+            }
+
+            // 如果 API 未返回 token，使用文本字符数作为输入 token 估算
+            if (inputTokens == 0 && text != null) {
+                inputTokens = text.length();
+            }
+
+            return SynthesisResult.builder()
+                    .audioUrl(dashscopeAudioUrl)
+                    .inputTokens(inputTokens)
+                    .outputTokens(outputTokens)
+                    .build();
 
         } catch (Exception e) {
             throw new RuntimeException("段落合成失败: " + e.getMessage(), e);

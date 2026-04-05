@@ -75,10 +75,18 @@ public class AudioSynthesisNodeExecutor implements NodeExecutor {
 
             context.addLog("调用音频合成服务，模型：" + model + "，音色：" + voice);
 
-            // 调用音频合成服务
-            String audioUrl = audioSynthesisService.synthesize(text, voice, languageType, model, apiKey);
+            // 调用音频合成服务（带 token 信息）
+            AudioSynthesisService.SynthesisResult synthesisResult =
+                    audioSynthesisService.synthesizeWithTokens(text, voice, languageType, model, apiKey);
+
+            String audioUrl = synthesisResult.getAudioUrl();
+            int inputTokens = synthesisResult.getInputTokens();
+            int outputTokens = synthesisResult.getOutputTokens();
 
             context.addLog("音频合成完成：" + audioUrl);
+            if (inputTokens > 0 || outputTokens > 0) {
+                context.addLog("Token 消耗 - 输入: " + inputTokens + ", 输出: " + outputTokens);
+            }
 
             // 获取输出参数配置
             @SuppressWarnings("unchecked")
@@ -93,7 +101,7 @@ public class AudioSynthesisNodeExecutor implements NodeExecutor {
             data.put(voiceUrlVar, audioUrl);
             data.put("voice_url", audioUrl);
 
-            return NodeExecutionResult.success(audioUrl, data);
+            return NodeExecutionResult.success(audioUrl, data, inputTokens, outputTokens);
 
         } catch (Exception e) {
             log.error("音频合成节点执行失败", e);

@@ -12,6 +12,7 @@ import {
   Checkbox,
   Space,
   Alert,
+  message,
 } from 'antd';
 import {
   PlayCircleOutlined,
@@ -25,6 +26,7 @@ import {
   ClockCircleOutlined,
   ThunderboltOutlined,
   EditOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
@@ -372,6 +374,23 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                 )}
                 {executionResult.output && (
                   <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>输出内容</Text>
+                      <Space>
+                        <Tag style={{ fontSize: 11 }}>{executionResult.output.length} 字符</Tag>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(executionResult.output || '');
+                            message.success('已复制到剪贴板');
+                          }}
+                        >
+                          复制
+                        </Button>
+                      </Space>
+                    </div>
                     <div
                       style={{
                         padding: 12,
