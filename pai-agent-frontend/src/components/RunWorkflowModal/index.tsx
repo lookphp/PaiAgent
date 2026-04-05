@@ -100,83 +100,6 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
     }
   }, [open]);
 
-  // 模拟执行进度
-  const simulateExecution = () => {
-    const nodeExecutionOrder = nodes
-      .filter((n) => n.type !== 'output')
-      .map((n, index) => ({
-        id: `${n.id}-${index}`,
-        nodeId: n.id,
-        nodeType: n.type,
-        nodeLabel: String(n.data?.label || n.type),
-        status: 'pending' as const,
-      }));
-
-    // 初始状态：全部待执行
-    const initialLogs: ExecutionLog[] = nodeExecutionOrder.map((node) => ({
-      id: node.id,
-      message: `等待执行 ${node.nodeLabel}`,
-      timestamp: new Date().toLocaleTimeString(),
-      status: 'pending',
-      nodeType: node.nodeType,
-      nodeLabel: node.nodeLabel,
-    }));
-
-    setLogs(initialLogs);
-
-    // 模拟每个节点执行
-    let currentIndex = 0;
-    const totalNodes = nodeExecutionOrder.length;
-
-    const executeNext = () => {
-      if (currentIndex >= totalNodes) {
-        setProgress(100);
-        return;
-      }
-
-      const node = nodeExecutionOrder[currentIndex];
-      const progressPercent = Math.round(((currentIndex + 1) / totalNodes) * 100);
-
-      // 更新当前节点为执行中
-      setLogs((prev) =>
-        prev.map((log, idx) =>
-          idx === currentIndex
-            ? {
-                ...log,
-                message: `正在执行 ${node.nodeLabel}...`,
-                status: 'running',
-                timestamp: new Date().toLocaleTimeString(),
-              }
-            : log
-        )
-      );
-      setProgress(progressPercent);
-
-      // 模拟执行时间
-      setTimeout(() => {
-        // 更新为成功
-        setLogs((prev) =>
-          prev.map((log, idx) =>
-            idx === currentIndex
-              ? {
-                  ...log,
-                  message: `${node.nodeLabel} 执行完成`,
-                  status: 'success',
-                  timestamp: new Date().toLocaleTimeString(),
-                  durationMs: Math.floor(Math.random() * 2000) + 500,
-                }
-              : log
-          )
-        );
-
-        currentIndex++;
-        executeNext();
-      }, 1500 + Math.random() * 1000);
-    };
-
-    executeNext();
-  };
-
   const handleRun = async () => {
     if (!input.trim() || isRunning) return;
 
@@ -210,9 +133,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
     setCurrentStep('running');
     setResult(null);
     setSuspendedData(null);
-
-    // 开始模拟进度
-    simulateExecution();
+    setProgress(10);
 
     try {
       const suspendOnNodeTypes = suspendConfig.length > 0 ? suspendConfig : undefined;
@@ -252,6 +173,10 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           totalTokens: log.totalTokens,
         }));
         setLogs(realLogs);
+        // 根据节点日志数量计算进度
+        const nodeLogs = realLogs.filter(l => l.nodeType);
+        const progressPercent = Math.min(90, nodeLogs.length * 25);
+        setProgress(progressPercent);
       }
 
       // 处理暂停状态
@@ -330,6 +255,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           totalTokens: log.totalTokens,
         }));
         setLogs(realLogs);
+        setProgress(75);
       }
 
       // 处理再次暂停
