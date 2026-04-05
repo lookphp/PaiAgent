@@ -13,6 +13,7 @@ import {
   Tag,
   Progress,
   message,
+  Checkbox,
 } from 'antd';
 import {
   PlayCircleOutlined,
@@ -26,6 +27,8 @@ import {
   UserOutlined,
   CheckOutlined,
   ClockCircleOutlined,
+  EditOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
@@ -42,7 +45,7 @@ interface ExecutionLog {
   id: string;
   message: string;
   timestamp: string;
-  status: 'pending' | 'running' | 'success' | 'error';
+  status: 'pending' | 'running' | 'success' | 'error' | 'suspended';
   nodeType?: string;
   nodeLabel?: string;
   durationMs?: number;
@@ -52,11 +55,18 @@ interface ExecutionLog {
   totalTokens?: number;
 }
 
+interface SuspendedData {
+  executionId: number;
+  nodeId: string;
+  nodeType: string;
+  output: string;
+}
+
 const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) => {
   const { currentWorkflow, nodes, edges } = useWorkflowStore();
   const [input, setInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'input' | 'running' | 'result'>('input');
+  const [currentStep, setCurrentStep] = useState<'input' | 'running' | 'suspended' | 'result'>('input');
   const [logs, setLogs] = useState<ExecutionLog[]>([]);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{
@@ -70,6 +80,11 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
     totalOutputTokens?: number;
   } | null>(null);
 
+  // 暂停相关状态
+  const [suspendConfig, setSuspendConfig] = useState<string[]>([]);
+  const [suspendedData, setSuspendedData] = useState<SuspendedData | null>(null);
+  const [editedOutput, setEditedOutput] = useState('');
+
   // 重置状态
   useEffect(() => {
     if (open) {
@@ -79,6 +94,9 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
       setLogs([]);
       setProgress(0);
       setResult(null);
+      setSuspendConfig([]);
+      setSuspendedData(null);
+      setEditedOutput('');
     }
   }, [open]);
 
@@ -160,7 +178,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
   };
 
   const handleRun = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isRunning) return;
 
     // 校验 1: 检查是否有连线
     if (edges.length === 0) {
@@ -191,25 +209,30 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
     setIsRunning(true);
     setCurrentStep('running');
     setResult(null);
+    setSuspendedData(null);
 
     // 开始模拟进度
     simulateExecution();
 
     try {
+      const suspendOnNodeTypes = suspendConfig.length > 0 ? suspendConfig : undefined;
+
       let response;
       if (currentWorkflow?.id) {
-        response = await workflowApi.execute({
+        response = await workflowApi.startExecution({
           workflowId: Number(currentWorkflow.id),
           input: input,
+          suspendOnNodeTypes,
         });
       } else {
-        response = await workflowApi.execute({
+        response = await workflowApi.startExecution({
           workflowId: 0,
           input: input,
           parameters: {
             nodes: JSON.stringify(nodes),
             edges: JSON.stringify(edges),
           },
+          suspendOnNodeTypes,
         });
       }
 
@@ -229,6 +252,21 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           totalTokens: log.totalTokens,
         }));
         setLogs(realLogs);
+      }
+
+      // 处理暂停状态
+      if (response.status?.toLowerCase() === 'suspended' && response.executionId) {
+        setProgress(50);
+        setSuspendedData({
+          executionId: response.executionId,
+          nodeId: response.suspendedNodeId || '',
+          nodeType: response.suspendedNodeType || '',
+          output: response.suspendedOutput || '',
+        });
+        setEditedOutput(response.suspendedOutput || '');
+        setCurrentStep('suspended');
+        setIsRunning(false);
+        return;
       }
 
       setCurrentStep('result');
@@ -261,6 +299,95 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
       });
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  // 继续执行（恢复）
+  const handleResume = async () => {
+    if (!suspendedData || !editedOutput.trim() || isRunning) return;
+
+    setIsRunning(true);
+    setCurrentStep('running');
+
+    try {
+      const response = await workflowApi.resumeExecution(suspendedData.executionId, {
+        modifiedOutput: editedOutput,
+      });
+
+      // 使用真实返回的日志
+      if (response.logs && response.logs.length > 0) {
+        const realLogs: ExecutionLog[] = response.logs.map((log: any, index: number) => ({
+          id: `log-${index}`,
+          message: log.message,
+          timestamp: new Date().toLocaleTimeString(),
+          status: log.nodeType ? 'success' : 'running',
+          nodeType: log.nodeType,
+          nodeLabel: log.nodeLabel,
+          durationMs: log.durationMs,
+          output: log.output,
+          inputTokens: log.inputTokens,
+          outputTokens: log.outputTokens,
+          totalTokens: log.totalTokens,
+        }));
+        setLogs(realLogs);
+      }
+
+      // 处理再次暂停
+      if (response.status?.toLowerCase() === 'suspended' && response.executionId) {
+        setSuspendedData({
+          executionId: response.executionId,
+          nodeId: response.suspendedNodeId || '',
+          nodeType: response.suspendedNodeType || '',
+          output: response.suspendedOutput || '',
+        });
+        setEditedOutput(response.suspendedOutput || '');
+        setCurrentStep('suspended');
+        setIsRunning(false);
+        return;
+      }
+
+      setProgress(100);
+      setCurrentStep('result');
+
+      if (response.success) {
+        setResult({
+          success: true,
+          output: response.output,
+          audioUrl: response.audioUrl,
+          totalDuration: response.totalDuration,
+          totalTokens: response.totalTokens,
+          totalInputTokens: response.totalInputTokens,
+          totalOutputTokens: response.totalOutputTokens,
+        });
+      } else {
+        setResult({
+          success: false,
+          error: response.error,
+        });
+      }
+    } catch (error: any) {
+      setCurrentStep('result');
+      setResult({
+        success: false,
+        error: error.message || '恢复执行失败',
+      });
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  // 取消执行
+  const handleCancelExecution = async () => {
+    if (!suspendedData) return;
+
+    try {
+      await workflowApi.cancelExecution(suspendedData.executionId);
+      setCurrentStep('input');
+      setLogs([]);
+      setProgress(0);
+      setSuspendedData(null);
+    } catch (error: any) {
+      message.error('取消失败: ' + error.message);
     }
   };
 
@@ -307,14 +434,19 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
               执行中
             </Tag>
           )}
+          {currentStep === 'suspended' && (
+            <Tag color="orange" icon={<EditOutlined />}>
+              暂停编辑
+            </Tag>
+          )}
         </div>
       }
       open={open}
       onCancel={handleClose}
       width={800}
       footer={null}
-      closable={!isRunning}
-      maskClosable={!isRunning}
+      closable={!isRunning && currentStep !== 'suspended'}
+      maskClosable={!isRunning && currentStep !== 'suspended'}
     >
       {/* 输入阶段 */}
       {currentStep === 'input' && (
@@ -331,6 +463,33 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
             placeholder="输入要处理的内容..."
             style={{ marginBottom: 16 }}
           />
+
+          {/* 暂停配置 */}
+          <Card size="small" style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 8 }}>
+              <Text strong>执行选项</Text>
+            </div>
+            <Space direction="vertical">
+              <Checkbox
+                checked={suspendConfig.includes('llm')}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSuspendConfig(['llm']);
+                  } else {
+                    setSuspendConfig([]);
+                  }
+                }}
+              >
+                <Space>
+                  <Tag color="purple" style={{ fontSize: 11 }}>LLM</Tag>
+                  <Text type="secondary" style={{ fontSize: 13 }}>
+                    LLM 输出后暂停，允许编辑
+                  </Text>
+                </Space>
+              </Checkbox>
+            </Space>
+          </Card>
+
           <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             <Card size="small" style={{ flex: 1 }}>
               <div style={{ textAlign: 'center' }}>
@@ -494,6 +653,96 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                 </Timeline.Item>
               ))}
             </Timeline>
+          </Card>
+        </div>
+      )}
+
+      {/* 暂停编辑阶段 */}
+      {currentStep === 'suspended' && suspendedData && (
+        <div style={{ padding: '16px 0' }}>
+          <Alert
+            type="info"
+            showIcon
+            message="工作流已暂停"
+            description={`节点 "${suspendedData.nodeType}" 执行完成，您可以编辑输出内容后继续执行`}
+            style={{ marginBottom: 16 }}
+          />
+
+          {/* 执行日志 */}
+          <Card
+            title={<span>执行详情</span>}
+            size="small"
+            style={{ maxHeight: 200, overflow: 'auto', marginBottom: 16 }}
+          >
+            <Timeline mode="left">
+              {logs.map((log, index) => (
+                <Timeline.Item
+                  key={log.id}
+                  dot={<CheckOutlined style={{ color: '#52c41a' }} />}
+                  color="green"
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                    <span
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 4,
+                        background: getNodeColor(log.nodeType),
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 12,
+                      }}
+                    >
+                      {getNodeIcon(log.nodeType)}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 500 }}>{log.nodeLabel}</div>
+                      <div style={{ fontSize: 12, color: '#999' }}>
+                        执行完成 {log.durationMs ? `(${log.durationMs}ms)` : ''}
+                      </div>
+                    </div>
+                    <Tag color="success">完成</Tag>
+                  </div>
+                </Timeline.Item>
+              ))}
+            </Timeline>
+          </Card>
+
+          {/* 编辑区域 */}
+          <Card
+            title={
+              <span>
+                <EditOutlined style={{ marginRight: 8 }} />
+                编辑输出内容
+              </span>
+            }
+            size="small"
+          >
+            <TextArea
+              rows={6}
+              value={editedOutput}
+              onChange={(e) => setEditedOutput(e.target.value)}
+              placeholder="编辑节点输出内容..."
+              style={{ marginBottom: 16, fontFamily: 'monospace' }}
+            />
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button
+                icon={<CloseOutlined />}
+                onClick={handleCancelExecution}
+              >
+                取消执行
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={handleResume}
+                disabled={!editedOutput.trim()}
+              >
+                继续执行
+              </Button>
+            </Space>
           </Card>
         </div>
       )}
