@@ -218,6 +218,11 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                         <div style={{ flex: 1 }}>
                           <div style={{ marginBottom: 4 }}>
                             <Text style={{ fontSize: 13 }}>{log.message}</Text>
+                            {log.timestamp && (
+                              <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>
+                                {log.timestamp}
+                              </span>
+                            )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {log.nodeLabel && (

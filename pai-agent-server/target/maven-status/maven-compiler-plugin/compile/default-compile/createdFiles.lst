@@ -1,6 +1,7 @@
 com/paiagent/controller/WorkflowController.class
 com/paiagent/model/Workflow.class
 com/paiagent/executor/WorkflowExecutor.class
+com/paiagent/service/ExecutionHistoryService.class
 com/paiagent/executor/NodeExecutor.class
 com/paiagent/service/AudioSynthesisServiceImpl.class
 com/paiagent/controller/AudioController.class
@@ -20,11 +21,14 @@ com/paiagent/executor/InputNodeExecutor.class
 com/paiagent/executor/WorkflowExecutor$ExecutionResult$ExecutionResultBuilder.class
 com/paiagent/service/LLMProviderServiceImpl.class
 com/paiagent/executor/ExecutionContext$ExecutionContextBuilder.class
+com/paiagent/controller/ExecutionHistoryController.class
 com/paiagent/executor/WorkflowExecutor$ExecutionResult.class
 com/paiagent/service/LLMProviderService.class
 com/paiagent/repository/WorkflowRepository.class
+com/paiagent/repository/ExecutionHistoryRepository.class
 com/paiagent/service/WorkflowService.class
 com/paiagent/executor/NodeExecutionResult$NodeExecutionResultBuilder.class
 com/paiagent/dto/ExecutionRequest.class
+com/paiagent/model/ExecutionHistory.class
 com/paiagent/PaiAgentServerApplication.class
 com/paiagent/executor/OutputNodeExecutor.class

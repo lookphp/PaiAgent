@@ -6,6 +6,8 @@ import com.paiagent.dto.ExecutionRequest;
 import com.paiagent.dto.ExecutionResponse;
 import com.paiagent.dto.WorkflowDto;
 import com.paiagent.executor.WorkflowExecutor;
+import com.paiagent.model.ExecutionHistory;
+import com.paiagent.service.ExecutionHistoryService;
 import com.paiagent.service.WorkflowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 执行控制器
@@ -26,6 +29,7 @@ public class ExecutionController {
 
     private final WorkflowService workflowService;
     private final WorkflowExecutor workflowExecutor;
+    private final ExecutionHistoryService executionHistoryService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -47,6 +51,27 @@ public class ExecutionController {
                     objectMapper.writeValueAsString(workflow.getEdges()),
                     request.getInput()
             );
+
+            // 保存执行历史
+            try {
+                executionHistoryService.saveExecutionHistory(
+                        request.getWorkflowId(),
+                        request.getInput(),
+                        result.getOutput(),
+                        result.getAudioUrl(),
+                        (List<Map<String, Object>>) (List<?>) result.getLogs(),
+                        result.getTotalDuration(),
+                        result.getTotalTokens(),
+                        result.getTotalInputTokens(),
+                        result.getTotalOutputTokens(),
+                        result.isSuccess(),
+                        result.getError(),
+                        result.getLogs() != null ? result.getLogs().size() : 0
+                );
+            } catch (Exception e) {
+                log.error("保存执行历史失败", e);
+                // 不影响返回结果
+            }
 
             if (!result.isSuccess()) {
                 return ResponseEntity.badRequest()
@@ -87,6 +112,27 @@ public class ExecutionController {
                     edgesJson,
                     request.getInput()
             );
+
+            // 保存执行历史（快速执行也记录，但workflowId为null）
+            try {
+                executionHistoryService.saveExecutionHistory(
+                        null,
+                        request.getInput(),
+                        result.getOutput(),
+                        result.getAudioUrl(),
+                        (List<Map<String, Object>>) (List<?>) result.getLogs(),
+                        result.getTotalDuration(),
+                        result.getTotalTokens(),
+                        result.getTotalInputTokens(),
+                        result.getTotalOutputTokens(),
+                        result.isSuccess(),
+                        result.getError(),
+                        result.getLogs() != null ? result.getLogs().size() : 0
+                );
+            } catch (Exception e) {
+                log.error("保存执行历史失败", e);
+                // 不影响返回结果
+            }
 
             if (!result.isSuccess()) {
                 return ResponseEntity.badRequest()

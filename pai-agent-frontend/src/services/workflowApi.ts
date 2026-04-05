@@ -1,5 +1,5 @@
 import api from './api';
-import type { Workflow, ExecutionRequest, ExecutionResponse } from '../types/workflow';
+import type { Workflow, ExecutionRequest, ExecutionResponse, ExecutionHistory } from '../types/workflow';
 
 /**
  * 工作流 API 服务
@@ -51,6 +51,31 @@ export const workflowApi = {
       parameters: request.parameters,
     });
     return response.data;
+  },
+
+  // ========== 执行历史相关接口 ==========
+
+  // 获取所有执行历史
+  getExecutionHistory: async (): Promise<ExecutionHistory[]> => {
+    const response = await api.get<ExecutionHistory[]>('/execution-history');
+    return response.data;
+  },
+
+  // 根据ID获取执行历史
+  getExecutionHistoryById: async (id: number): Promise<ExecutionHistory> => {
+    const response = await api.get<ExecutionHistory>(`/execution-history/${id}`);
+    return response.data;
+  },
+
+  // 根据工作流ID获取执行历史
+  getExecutionHistoryByWorkflowId: async (workflowId: number): Promise<ExecutionHistory[]> => {
+    const response = await api.get<ExecutionHistory[]>(`/execution-history/workflow/${workflowId}`);
+    return response.data;
+  },
+
+  // 删除执行历史
+  deleteExecutionHistory: async (id: number): Promise<void> => {
+    await api.delete(`/execution-history/${id}`);
   },
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Space, Dropdown, Avatar, Tooltip, Badge, Switch, Tag } from 'antd';
 import {
   PlusOutlined,
@@ -11,8 +11,10 @@ import {
   FileTextOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
+import ExecutionHistoryModal from '../ExecutionHistoryModal';
 
 interface HeaderProps {
   onNewWorkflow: () => void;
@@ -27,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({
   onSaveWorkflow,
   onRunWorkflow,
 }) => {
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const {
     debugDrawerOpen,
     setDebugDrawerOpen,
@@ -176,6 +179,15 @@ const Header: React.FC<HeaderProps> = ({
             运行
           </Button>
 
+          {/* 执行历史按钮 */}
+          <Button
+            icon={<HistoryOutlined />}
+            onClick={() => setHistoryModalOpen(true)}
+            title="执行历史"
+          >
+            历史
+          </Button>
+
           {/* 调试开关 */}
           <div
             style={{
@@ -240,6 +252,12 @@ const Header: React.FC<HeaderProps> = ({
           </Dropdown>
         </Space>
       </div>
+
+      {/* 执行历史弹窗 */}
+      <ExecutionHistoryModal
+        open={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+      />
     </div>
   );
 };

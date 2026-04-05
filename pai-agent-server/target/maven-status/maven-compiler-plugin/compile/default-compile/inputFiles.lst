@@ -9,6 +9,7 @@
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/config/CorsConfig.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/LLMProviderServiceImpl.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/executor/LLMNodeExecutor.java
+/Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/model/ExecutionHistory.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/MinioService.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/dto/ExecutionRequest.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/AudioSynthesisServiceImpl.java
@@ -16,8 +17,11 @@
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/model/Workflow.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/AudioSynthesisService.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/repository/WorkflowRepository.java
+/Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/repository/ExecutionHistoryRepository.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/executor/WorkflowExecutor.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/dto/WorkflowDto.java
+/Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/controller/ExecutionHistoryController.java
+/Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/ExecutionHistoryService.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/executor/NodeExecutionResult.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/executor/OutputNodeExecutor.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/controller/ExecutionController.java

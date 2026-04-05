@@ -58,3 +58,22 @@ export interface ExecutionLog {
   outputTokens?: number;
   totalTokens?: number;
 }
+
+// 执行历史记录接口
+export interface ExecutionHistory {
+  id: number;
+  workflowId?: number;
+  workflowName?: string;
+  inputText: string;
+  outputText?: string;
+  audioUrl?: string;
+  executionLogs?: string; // JSON字符串
+  totalDuration?: number;
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  status: 'success' | 'error';
+  errorMessage?: string;
+  nodeCount?: number;
+  executedAt: string;
+}

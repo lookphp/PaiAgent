@@ -454,7 +454,14 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                       {getNodeIcon(log.nodeType)}
                     </span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500 }}>{log.nodeLabel}</div>
+                      <div style={{ fontWeight: 500 }}>
+                        {log.nodeLabel}
+                        {log.timestamp && (
+                          <span style={{ fontSize: 11, color: '#999', marginLeft: 8, fontWeight: 400 }}>
+                            {log.timestamp}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 12, color: '#999' }}>
                         {log.status === 'pending' && '等待执行'}
                         {log.status === 'running' && '执行中...'}
