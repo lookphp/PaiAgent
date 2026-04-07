@@ -129,51 +129,55 @@
 /* ========== 节点状态指示器 ========== */
 .node-status {
   position: absolute;
-  bottom: -6px;
-  right: -6px;
+  bottom: -8px;
+  right: -8px;
   display: flex;
   align-items: center;
   gap: 4px;
+  z-index: 10;
 }
 
 .node-status-badge {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: var(--shadow-sm);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  font-weight: bold;
 }
 
 .node-status-badge.idle {
-  background: var(--text-muted);
+  display: none;
 }
 
 .node-status-badge.running {
-  background: var(--primary);
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: #fff;
-  animation: pulse 1.5s ease-in-out infinite;
+  animation: statusPulse 1s ease-in-out infinite;
 }
 
 .node-status-badge.completed {
-  background: var(--success);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: #fff;
 }
 
 .node-status-badge.error {
-  background: var(--error);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
 }
 
-@keyframes pulse {
+@keyframes statusPulse {
   0%, 100% {
-    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
   }
   50% {
-    opacity: 0.5;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.6);
   }
 }
 
@@ -181,30 +185,69 @@
 
 /* 节点运行状态 */
 .flow-node.node-running {
-  border: 2px solid var(--primary);
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
-  animation: nodePulse 1.5s ease-in-out infinite;
+  border: 3px solid #3b82f6 !important;
+  background: linear-gradient(to bottom, #fff 0%, #eff6ff 100%);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 20px rgba(59, 130, 246, 0.25);
+  animation: runningGlow 1.5s ease-in-out infinite;
 }
 
-@keyframes nodePulse {
+.flow-node.node-running::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+  background-size: 200% 100%;
+  animation: progressSlide 1.5s linear infinite;
+  border-radius: 10px 10px 0 0;
+}
+
+@keyframes runningGlow {
   0%, 100% {
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 20px rgba(59, 130, 246, 0.25);
   }
   50% {
-    box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.2), 0 6px 30px rgba(59, 130, 246, 0.35);
+  }
+}
+
+@keyframes progressSlide {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 
 /* 节点完成状态 */
 .flow-node.node-completed {
-  border: 2px solid var(--success);
-  box-shadow: 0 0 8px rgba(22, 163, 74, 0.2);
+  border: 3px solid #22c55e !important;
+  background: linear-gradient(to bottom, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1), 0 2px 12px rgba(34, 197, 94, 0.2);
 }
 
 /* 节点错误状态 */
 .flow-node.node-error {
-  border: 2px solid var(--error);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+  border: 3px solid #ef4444 !important;
+  background: linear-gradient(to bottom, #fef2f2 0%, #fee2e2 100%);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1), 0 2px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* 图标脉冲动画 */
+.node-icon.icon-pulse {
+  animation: iconPulse 1s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 /* 运行状态的图标 */

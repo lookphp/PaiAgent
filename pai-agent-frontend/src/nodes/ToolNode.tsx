@@ -16,12 +16,12 @@ const toolIconMap: Record<string, React.ReactNode> = {
   'audio-synthesis': <SoundOutlined />,
 };
 
-// 状态图标映射
-const statusIconMap: Record<string, React.ReactNode> = {
-  idle: null,
-  running: <LoadingOutlined spin />,
-  completed: <CheckCircleOutlined />,
-  error: <ExclamationCircleOutlined />,
+// 状态配置
+const statusConfig: Record<string, { icon: React.ReactNode; color: string; text: string }> = {
+  idle: { icon: null, color: '', text: '' },
+  running: { icon: <LoadingOutlined spin />, color: 'processing', text: '执行中' },
+  completed: { icon: <CheckCircleOutlined />, color: 'success', text: '完成' },
+  error: { icon: <ExclamationCircleOutlined />, color: 'error', text: '失败' },
 };
 
 const ToolNode: React.FC<NodeProps> = (props) => {
@@ -32,16 +32,24 @@ const ToolNode: React.FC<NodeProps> = (props) => {
   const toolType = data?.toolType || '';
   const toolName = toolTypeMap[toolType] || toolType || '工具';
   const toolIcon = toolIconMap[toolType] || <SoundOutlined />;
+  const status = statusConfig[executionStatus];
 
   return (
     <div className={`flow-node tool-node ${selected ? 'selected' : ''} node-${executionStatus}`}>
       {/* 节点头部：图标 + 标题 */}
       <div className="node-header">
-        <div className="node-icon tool">
-          {toolIcon}
+        <div className={`node-icon tool ${executionStatus === 'running' ? 'icon-pulse' : ''}`}>
+          {executionStatus === 'running' ? <LoadingOutlined spin /> : toolIcon}
         </div>
         <div className="node-title">
-          <Text strong>{data?.label || '工具节点'}</Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Text strong>{data?.label || '工具节点'}</Text>
+            {status.text && (
+              <Tag color={status.color} style={{ fontSize: 10, padding: '0 4px', margin: 0, lineHeight: '16px' }}>
+                {status.text}
+              </Tag>
+            )}
+          </div>
           <Text type="secondary" className="node-subtitle">{toolName}</Text>
         </div>
       </div>
@@ -55,9 +63,9 @@ const ToolNode: React.FC<NodeProps> = (props) => {
 
       {/* 状态指示器 */}
       <div className="node-status">
-        {statusIconMap[executionStatus] && (
+        {status.icon && (
           <div className={`node-status-badge ${executionStatus}`}>
-            {statusIconMap[executionStatus]}
+            {status.icon}
           </div>
         )}
       </div>
