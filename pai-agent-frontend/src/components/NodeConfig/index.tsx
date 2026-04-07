@@ -50,6 +50,12 @@ const modelOptions = [
   { value: 'zhipu-chat', label: '智谱 AI' },
 ];
 
+// TTS 模型选项
+const ttsModelOptions = [
+  { value: 'qwen3-tts-flash', label: 'qwen3-tts-flash (基础版)' },
+  { value: 'qwen3-tts-instruct-flash', label: 'qwen3-tts-instruct-flash (支持指令控制)' },
+];
+
 // 温度选项
 const temperatureOptions = [
   { value: 0, label: '0 - 确定性最高' },
@@ -190,7 +196,7 @@ const NodeConfigPanel: React.FC = () => {
               <Input.Password placeholder="输入 API Key" />
             </Form.Item>
             <Form.Item label="模型" name="model">
-              <Input placeholder="qwen3-tts-flash" />
+              <Select options={ttsModelOptions} placeholder="选择 TTS 模型" />
             </Form.Item>
           </>
         );
