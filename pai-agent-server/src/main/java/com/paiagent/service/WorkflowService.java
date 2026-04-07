@@ -3,7 +3,9 @@ package com.paiagent.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paiagent.dto.WorkflowDto;
+import com.paiagent.model.User;
 import com.paiagent.model.Workflow;
+import com.paiagent.repository.UserRepository;
 import com.paiagent.repository.WorkflowRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +24,34 @@ import java.util.stream.Collectors;
 public class WorkflowService {
 
     private final WorkflowRepository workflowRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+
+    /**
+     * 根据用户名获取用户ID
+     */
+    public Long getUserIdByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    /**
+     * 根据用户ID查询工作流列表
+     */
+    @Transactional(readOnly = true)
+    public List<WorkflowDto> findByUserId(Long userId) {
+        List<Workflow> workflows;
+        if (userId != null) {
+            workflows = workflowRepository.findByUserIdOrderByUpdatedAtDesc(userId);
+        } else {
+            // 如果没有用户ID，返回空列表（或者可以返回公开工作流）
+            workflows = List.of();
+        }
+        return workflows.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public List<WorkflowDto> findAll() {
@@ -39,17 +68,36 @@ public class WorkflowService {
                 .orElse(null);
     }
 
+    /**
+     * 根据ID和用户ID查询工作流
+     */
+    @Transactional(readOnly = true)
+    public WorkflowDto findByIdAndUserId(Long id, Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return workflowRepository.findByIdAndUserId(id, userId)
+                .map(this::toDto)
+                .orElse(null);
+    }
+
     @Transactional
-    public WorkflowDto create(WorkflowDto dto) {
+    public WorkflowDto create(WorkflowDto dto, Long userId) {
         Workflow workflow = toEntity(dto);
         workflow.setId(null);
+        workflow.setUserId(userId);
         Workflow saved = workflowRepository.save(workflow);
         return toDto(saved);
     }
 
     @Transactional
-    public WorkflowDto update(Long id, WorkflowDto dto) {
-        return workflowRepository.findById(id)
+    public WorkflowDto create(WorkflowDto dto) {
+        return create(dto, null);
+    }
+
+    @Transactional
+    public WorkflowDto update(Long id, WorkflowDto dto, Long userId) {
+        return workflowRepository.findByIdAndUserId(id, userId)
                 .map(workflow -> {
                     workflow.setName(dto.getName());
                     workflow.setDescription(dto.getDescription());
@@ -76,6 +124,22 @@ public class WorkflowService {
     }
 
     @Transactional
+    public WorkflowDto update(Long id, WorkflowDto dto) {
+        return update(id, dto, null);
+    }
+
+    @Transactional
+    public void delete(Long id, Long userId) {
+        if (userId != null) {
+            // 只能删除自己的工作流
+            workflowRepository.findByIdAndUserId(id, userId)
+                    .ifPresent(workflow -> workflowRepository.deleteById(id));
+        } else {
+            workflowRepository.deleteById(id);
+        }
+    }
+
+    @Transactional
     public void delete(Long id) {
         workflowRepository.deleteById(id);
     }
@@ -99,6 +163,7 @@ public class WorkflowService {
         dto.setConfig(workflow.getConfig());
         dto.setCreatedAt(workflow.getCreatedAt());
         dto.setUpdatedAt(workflow.getUpdatedAt());
+        dto.setUserId(workflow.getUserId());
         return dto;
     }
 
@@ -138,6 +203,7 @@ public class WorkflowService {
         }
 
         workflow.setConfig(dto.getConfig());
+        workflow.setUserId(dto.getUserId());
         return workflow;
     }
 }

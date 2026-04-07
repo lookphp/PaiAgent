@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { message, Modal, Button, Tag, Space, Typography } from 'antd';
 import {
   FileTextOutlined,
@@ -13,14 +14,29 @@ import NodeConfigPanel from './components/NodeConfig';
 import Header from './components/Header';
 import WorkflowModal from './components/WorkflowModal';
 import RunWorkflowModal from './components/RunWorkflowModal';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import { useWorkflowStore } from './stores/workflowStore';
+import { useAuthStore } from './stores/authStore';
 import { workflowApi } from './services/workflowApi';
 import type { Workflow } from './types/workflow';
 import './App.css';
 
 const { Text } = Typography;
 
-function App() {
+// 路由守卫组件
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// 主页面组件
+const MainPage: React.FC = () => {
   const {
     nodes,
     edges,
@@ -363,7 +379,7 @@ function App() {
         {draftData && (
           <div style={{ padding: '16px 0' }}>
             <div style={{ marginBottom: 16 }}>
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <ClockCircleOutlined style={{ color: '#8c8c8c' }} />
                   <Text type="secondary">上次编辑时间：</Text>
@@ -405,6 +421,26 @@ function App() {
         )}
       </Modal>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <MainPage />
+            </PrivateRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

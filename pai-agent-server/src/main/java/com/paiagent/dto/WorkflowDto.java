@@ -29,4 +29,9 @@ public class WorkflowDto {
     private String config;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /**
+     * 所属用户ID
+     */
+    private Long userId;
 }

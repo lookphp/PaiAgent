@@ -62,7 +62,8 @@ const SuspendedEditor: React.FC<SuspendedEditorProps> = () => {
         nodes: JSON.stringify(nodes),
         edges: JSON.stringify(edges),
       },
-      suspendOnNodeTypes: suspendConfig.nodeTypes?.length > 0 ? suspendConfig.nodeTypes : undefined,
+      // 恢复执行时不传递暂停配置，避免再次暂停
+      // suspendOnNodeTypes: suspendConfig.nodeTypes?.length > 0 ? suspendConfig.nodeTypes : undefined,
       // 从暂停节点之后继续执行
       resumeFromNodeId: suspendedData.nodeId,
       // 传递修改后的输出作为 lastOutput

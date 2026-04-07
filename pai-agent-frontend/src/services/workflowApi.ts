@@ -119,13 +119,39 @@ export const workflowApi = {
       body.parameters = request.parameters;
     }
 
+    // 获取 Token
+    const authStorage = localStorage.getItem('auth-storage');
+    let token: string | null = null;
+    if (authStorage) {
+      try {
+        const parsed = JSON.parse(authStorage);
+        token = parsed?.state?.token;
+        console.log('[SSE] Token from localStorage:', token ? 'found' : 'NOT found');
+        console.log('[SSE] Auth storage state:', parsed?.state?.isAuthenticated);
+      } catch (e) {
+        console.error('[SSE] Failed to parse auth storage:', e);
+      }
+    } else {
+      console.error('[SSE] No auth-storage in localStorage');
+    }
+
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // 标记工作流是否已完成 - 必须在 fetch 外部定义，以便 catch 可以访问
+    let workflowCompleted = false;
+
     // 启动 SSE 连接
+
     fetch(`${API_BASE_URL}/execution/stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
-      },
+      headers,
       body: JSON.stringify(body),
       signal,
     })
@@ -142,40 +168,73 @@ export const workflowApi = {
         const decoder = new TextDecoder();
         let buffer = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            console.log('[SSE] Stream done');
-            break;
-          }
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              console.log('[SSE] Stream done');
+              break;
+            }
 
-          buffer += decoder.decode(value, { stream: true });
-          console.log('[SSE] Received buffer:', buffer.length, 'bytes');
+            buffer += decoder.decode(value, { stream: true });
+            console.log('[SSE] Received buffer:', buffer.length, 'bytes');
 
-          // 解析 SSE 事件 - 按双换行符分割完整事件
-          const events = buffer.split('\n\n');
-          // 保留最后一个可能不完整的事件
-          buffer = events.pop() || '';
+            // 解析 SSE 事件 - 按双换行符分割完整事件
+            const events = buffer.split('\n\n');
+            // 保留最后一个可能不完整的事件
+            buffer = events.pop() || '';
 
-          for (const eventStr of events) {
-            if (eventStr.trim()) {
-              // 解析事件内容
-              const lines = eventStr.split('\n');
-              for (const line of lines) {
-                if (line.startsWith('data:')) {
-                  const data = line.slice(5).trim();
-                  if (data) {
-                    try {
-                      const event: ExecutionEvent = JSON.parse(data);
-                      console.log('[SSE] Parsed event:', event.eventType);
-                      onEvent(event);
-                    } catch (e) {
-                      console.error('[SSE] Failed to parse:', data, e);
+            for (const eventStr of events) {
+              if (eventStr.trim()) {
+                // 解析事件内容
+                const lines = eventStr.split('\n');
+                for (const line of lines) {
+                  if (line.startsWith('data:')) {
+                    const data = line.slice(5).trim();
+                    if (data) {
+                      try {
+                        const event: ExecutionEvent = JSON.parse(data);
+                        console.log('[SSE] Parsed event:', event.eventType);
+                        // 检查是否是工作流完成事件
+                        if (event.eventType === 'workflow_complete' || event.eventType === 'workflow_error' || event.eventType === 'workflow_suspended') {
+                          workflowCompleted = true;
+                        }
+                        onEvent(event);
+                      } catch (e) {
+                        console.error('[SSE] Failed to parse:', data, e);
+                      }
                     }
                   }
                 }
               }
             }
+          }
+        } catch (readError: any) {
+          // 处理读取错误，但先尝试处理剩余的 buffer
+          console.log('[SSE] Read error, processing remaining buffer');
+          if (buffer.trim()) {
+            const lines = buffer.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data:')) {
+                const data = line.slice(5).trim();
+                if (data) {
+                  try {
+                    const event: ExecutionEvent = JSON.parse(data);
+                    console.log('[SSE] Parsed event (from buffer):', event.eventType);
+                    if (event.eventType === 'workflow_complete' || event.eventType === 'workflow_error' || event.eventType === 'workflow_suspended') {
+                      workflowCompleted = true;
+                    }
+                    onEvent(event);
+                  } catch (e) {
+                    console.error('[SSE] Failed to parse:', data, e);
+                  }
+                }
+              }
+            }
+          }
+          // 如果工作流未完成，重新抛出错误
+          if (!workflowCompleted) {
+            throw readError;
           }
         }
 
@@ -190,6 +249,9 @@ export const workflowApi = {
                 try {
                   const event: ExecutionEvent = JSON.parse(data);
                   console.log('[SSE] Parsed event (final):', event.eventType);
+                  if (event.eventType === 'workflow_complete' || event.eventType === 'workflow_error' || event.eventType === 'workflow_suspended') {
+                    workflowCompleted = true;
+                  }
                   onEvent(event);
                 } catch (e) {
                   console.error('[SSE] Failed to parse:', data, e);
@@ -200,8 +262,12 @@ export const workflowApi = {
         }
       })
       .catch((error) => {
-        if (error.name !== 'AbortError' && onError) {
+        // 如果工作流已完成，忽略连接关闭错误
+        if (error.name !== 'AbortError' && onError && !workflowCompleted) {
+          console.error('[SSE] Error:', error);
           onError(error);
+        } else if (workflowCompleted) {
+          console.log('[SSE] Workflow completed, ignoring connection close');
         }
       });
 

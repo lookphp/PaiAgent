@@ -35,6 +35,9 @@ public class Workflow {
     @Column(columnDefinition = "TEXT")
     private String config;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

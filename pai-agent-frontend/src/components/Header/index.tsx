@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Space, Dropdown, Avatar, Tooltip, Badge, Switch, Tag } from 'antd';
+import { Button, Space, Dropdown, Avatar, Tooltip, Badge, Switch, Tag, message } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -13,7 +13,10 @@ import {
   ExclamationCircleOutlined,
   HistoryOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { useWorkflowStore } from '../../stores/workflowStore';
+import { useAuthStore } from '../../stores/authStore';
+import { authApi } from '../../services/authApi';
 import ExecutionHistoryModal from '../ExecutionHistoryModal';
 
 interface HeaderProps {
@@ -29,6 +32,7 @@ const Header: React.FC<HeaderProps> = ({
   onSaveWorkflow,
   onRunWorkflow,
 }) => {
+  const navigate = useNavigate();
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const {
     debugDrawerOpen,
@@ -38,6 +42,8 @@ const Header: React.FC<HeaderProps> = ({
     edges,
     hasUnsavedChanges,
   } = useWorkflowStore();
+
+  const { user, logout, isAuthenticated } = useAuthStore();
 
   // 快捷键支持 Ctrl+S
   useEffect(() => {
@@ -51,13 +57,30 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onSaveWorkflow]);
 
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (e) {
+      // ignore
+    }
+    logout();
+    message.success('已登出');
+    navigate('/login');
+  };
+
   const userMenuItems = [
     {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: '登出',
+      onClick: handleLogout,
     },
   ];
+
+  // 获取用户名首字母
+  const getUserInitial = () => {
+    return user?.username?.charAt(0).toUpperCase() || 'U';
+  };
 
   return (
     <div className="app-header">
@@ -242,11 +265,11 @@ const Header: React.FC<HeaderProps> = ({
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   }}
                 >
-                  A
+                  {getUserInitial()}
                 </Avatar>
               </Badge>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>
-                admin
+                {user?.username || '用户'}
               </span>
             </div>
           </Dropdown>

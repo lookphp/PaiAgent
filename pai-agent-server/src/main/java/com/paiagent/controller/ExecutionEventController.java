@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -55,9 +57,16 @@ public class ExecutionEventController {
             emitter.completeWithError(e);
         });
 
-        // 异步执行工作流
-        executorService.execute(() -> {
+        // 异步执行工作流，手动传递 SecurityContext
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        Runnable task = () -> {
             try {
+                // 在异步线程中设置认证上下文
+                if (authentication != null) {
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+
                 String nodesJson;
                 String edgesJson;
 
@@ -73,12 +82,20 @@ public class ExecutionEventController {
                     edgesJson = objectMapper.writeValueAsString(workflow.getEdges());
                 } else {
                     // 使用传入的节点和边
-                    nodesJson = request.getParameters() != null
-                            ? (String) request.getParameters().get("nodes")
-                            : "[]";
-                    edgesJson = request.getParameters() != null
-                            ? (String) request.getParameters().get("edges")
-                            : "[]";
+                    if (request.getParameters() != null) {
+                        Object nodesObj = request.getParameters().get("nodes");
+                        Object edgesObj = request.getParameters().get("edges");
+                        // 将数组对象转换为 JSON 字符串
+                        nodesJson = nodesObj instanceof String
+                                ? (String) nodesObj
+                                : objectMapper.writeValueAsString(nodesObj);
+                        edgesJson = edgesObj instanceof String
+                                ? (String) edgesObj
+                                : objectMapper.writeValueAsString(edgesObj);
+                    } else {
+                        nodesJson = "[]";
+                        edgesJson = "[]";
+                    }
                 }
 
                 // 执行工作流，推送事件（传递暂停配置和恢复参数）
@@ -106,8 +123,13 @@ public class ExecutionEventController {
                     emitter.completeWithError(e);
                 } catch (IOException ignored) {
                 }
+            } finally {
+                // 清除异步线程的 SecurityContext
+                SecurityContextHolder.clearContext();
             }
-        });
+        };
+
+        executorService.execute(task);
 
         return emitter;
     }
