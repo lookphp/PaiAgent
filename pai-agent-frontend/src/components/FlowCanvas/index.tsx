@@ -46,6 +46,18 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
   const store = useWorkflowStore();
   const [rfInstance, setRfInstance] = React.useState<ReactFlowInstance | null>(null);
 
+  // 获取节点执行状态
+  const nodeExecutionStatus = useWorkflowStore((state) => state.nodeExecutionStatus);
+
+  // 将执行状态合并到节点数据中
+  const nodesWithStatus = store.nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      executionStatus: nodeExecutionStatus[node.id] || 'idle',
+    },
+  }));
+
   const onInit = useCallback((instance: ReactFlowInstance) => {
     setRfInstance(instance);
   }, []);
@@ -176,7 +188,7 @@ const FlowCanvas: React.FC<FlowCanvasProps> = () => {
   return (
     <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%', position: 'relative' }}>
       <ReactFlow
-        nodes={store.nodes}
+        nodes={nodesWithStatus}
         edges={store.edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

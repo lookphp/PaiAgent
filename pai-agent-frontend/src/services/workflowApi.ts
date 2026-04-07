@@ -1,5 +1,7 @@
 import api from './api';
-import type { Workflow, ExecutionRequest, ExecutionResponse, ExecutionHistory, ResumeRequest } from '../types/workflow';
+import type { Workflow, ExecutionRequest, ExecutionResponse, ExecutionHistory, ResumeRequest, ExecutionEvent } from '../types/workflow';
+
+const API_BASE_URL = 'http://localhost:8080/api';
 
 /**
  * 工作流 API 服务
@@ -82,6 +84,95 @@ export const workflowApi = {
       parameters: request.parameters,
     });
     return response.data;
+  },
+
+  // ========== SSE 实时执行 ==========
+
+  /**
+   * SSE 实时执行工作流
+   * @param request 执行请求
+   * @param onEvent 事件回调函数
+   * @param onError 错误回调函数
+   * @returns 返回关闭连接的函数
+   */
+  executeStream: (
+    request: ExecutionRequest,
+    onEvent: (event: ExecutionEvent) => void,
+    onError?: (error: Error) => void
+  ): (() => void) => {
+    // 使用 fetch API 发送 POST 请求，然后读取 SSE 流
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    // 构建请求 body
+    const body: any = {
+      workflowId: request.workflowId || 0,
+      input: request.input,
+    };
+
+    // 如果没有 workflowId，使用 parameters 中的 nodes 和 edges
+    if (!request.workflowId || request.workflowId === 0) {
+      body.parameters = request.parameters;
+    }
+
+    // 启动 SSE 连接
+    fetch(`${API_BASE_URL}/execution/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+      body: JSON.stringify(body),
+      signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Response body is null');
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // 解析 SSE 事件
+          const lines = buffer.split('\n');
+          buffer = '';
+
+          for (const line of lines) {
+            if (line.startsWith('data:')) {
+              const data = line.slice(5).trim();
+              if (data) {
+                try {
+                  const event: ExecutionEvent = JSON.parse(data);
+                  onEvent(event);
+                } catch (e) {
+                  console.error('Failed to parse SSE event:', data, e);
+                }
+              }
+            }
+          }
+        }
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError' && onError) {
+          onError(error);
+        }
+      });
+
+    // 返回关闭连接的函数
+    return () => {
+      controller.abort();
+    };
   },
 
   // ========== 执行历史相关接口 ==========

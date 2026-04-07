@@ -281,7 +281,7 @@ const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
       <Drawer
         title="执行详情"
         placement="right"
-        width={600}
+        size="large"
         onClose={() => setDetailOpen(false)}
         open={detailOpen}
       >

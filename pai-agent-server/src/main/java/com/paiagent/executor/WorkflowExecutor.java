@@ -2,8 +2,10 @@ package com.paiagent.executor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.paiagent.dto.ExecutionEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.*;
 
@@ -28,6 +30,138 @@ public class WorkflowExecutor {
      */
     public ExecutionResult executeWorkflow(String nodesJson, String edgesJson, String input) {
         return executeWorkflowIncremental(nodesJson, edgesJson, input, null, null, 0, null, null);
+    }
+
+    /**
+     * 执行工作流并实时推送 SSE 事件
+     *
+     * @param nodesJson 节点定义
+     * @param edgesJson 边定义
+     * @param input 用户输入
+     * @param emitter SSE emitter，用于推送事件
+     */
+    public void executeWithEvents(String nodesJson, String edgesJson, String input, SseEmitter emitter) {
+        long workflowStartTime = System.currentTimeMillis();
+        try {
+            List<Map<String, Object>> nodes = parseNodes(nodesJson);
+            List<Map<String, Object>> edges = parseEdges(edgesJson);
+
+            // 构建执行图
+            Map<String, List<String>> adjacencyList = buildAdjacencyList(nodes, edges);
+            Map<String, Integer> inDegree = calculateInDegree(nodes, edges);
+
+            // 拓扑排序
+            List<String> sortedNodes = topologicalSort(adjacencyList, inDegree, nodes);
+            if (sortedNodes == null) {
+                sendEvent(emitter, ExecutionEvent.workflowError("工作流存在环路，无法执行"));
+                return;
+            }
+
+            // 初始化执行上下文
+            ExecutionContext context = ExecutionContext.builder()
+                    .input(input)
+                    .variables(new HashMap<>())
+                    .logs(new ArrayList<>())
+                    .build();
+
+            Map<String, NodeExecutionResult> results = new HashMap<>();
+            int totalInputTokens = 0;
+            int totalOutputTokens = 0;
+
+            // 执行每个节点
+            for (int i = 0; i < sortedNodes.size(); i++) {
+                String nodeId = sortedNodes.get(i);
+                Map<String, Object> node = findNodeById(nodes, nodeId);
+                if (node == null) {
+                    continue;
+                }
+
+                String nodeType = (String) node.get("type");
+                NodeExecutor executor = findExecutorByNodeType(nodeType);
+
+                if (executor == null) {
+                    sendEvent(emitter, ExecutionEvent.workflowError("未找到节点类型 '" + nodeType + "' 的执行器"));
+                    return;
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> nodeData = (Map<String, Object>) node.get("data");
+                String nodeLabel = nodeData != null ? (String) nodeData.get("label") : nodeType;
+
+                // 推送节点开始事件
+                sendEvent(emitter, ExecutionEvent.nodeStart(nodeId, nodeType, nodeLabel));
+
+                // 记录节点开始执行
+                long nodeStartTime = System.currentTimeMillis();
+                context.startStep(nodeType);
+
+                NodeExecutionResult result = executor.execute(context, nodeData != null ? nodeData : new HashMap<>());
+
+                // 记录节点执行完成
+                long nodeDuration = System.currentTimeMillis() - nodeStartTime;
+                context.endStep(nodeType, nodeId, nodeLabel, result.getOutput(), result.getInputTokens(), result.getOutputTokens());
+
+                // 推送节点完成事件
+                sendEvent(emitter, ExecutionEvent.nodeComplete(
+                        nodeId, nodeType, nodeLabel,
+                        result.getOutput(), nodeDuration,
+                        result.getInputTokens(), result.getOutputTokens(),
+                        result.getInputTokens() + result.getOutputTokens()
+                ));
+
+                results.put(nodeId, result);
+
+                if (!result.isSuccess()) {
+                    sendEvent(emitter, ExecutionEvent.workflowError(result.getError()));
+                    return;
+                }
+
+                // 将结果存储到上下文
+                context.setVariable("lastOutput", result.getOutput());
+                context.setVariable("node_output_" + nodeId, result.getOutput());
+                if (result.getData() != null) {
+                    context.getVariables().putAll(result.getData());
+                }
+
+                totalInputTokens += result.getInputTokens();
+                totalOutputTokens += result.getOutputTokens();
+            }
+
+            long totalDuration = System.currentTimeMillis() - workflowStartTime;
+            int totalTokens = context.getTotalTokens();
+            context.addLog("工作流执行完成，总耗时: " + totalDuration + "ms，总 Token: " + totalTokens);
+
+            // 推送工作流完成事件
+            sendEvent(emitter, ExecutionEvent.workflowComplete(
+                    context.getStringVariable("lastOutput"),
+                    (String) context.getVariable("audioUrl"),
+                    totalDuration,
+                    totalTokens,
+                    totalInputTokens,
+                    totalOutputTokens
+            ));
+
+        } catch (Exception e) {
+            log.error("工作流执行失败", e);
+            try {
+                sendEvent(emitter, ExecutionEvent.workflowError("执行失败: " + e.getMessage()));
+            } catch (Exception sendError) {
+                log.error("发送错误事件失败", sendError);
+            }
+        }
+    }
+
+    /**
+     * 发送 SSE 事件
+     */
+    private void sendEvent(SseEmitter emitter, ExecutionEvent event) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("message")
+                    .data(objectMapper.writeValueAsString(event)));
+        } catch (Exception e) {
+            log.error("发送 SSE 事件失败", e);
+        }
     }
 
     /**

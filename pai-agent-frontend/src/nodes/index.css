@@ -137,14 +137,15 @@
 }
 
 .node-status-badge {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 12px;
 }
 
 .node-status-badge.idle {
@@ -153,15 +154,18 @@
 
 .node-status-badge.running {
   background: var(--primary);
+  color: #fff;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.node-status-badge.success {
+.node-status-badge.completed {
   background: var(--success);
+  color: #fff;
 }
 
 .node-status-badge.error {
   background: var(--error);
+  color: #fff;
 }
 
 @keyframes pulse {
@@ -171,6 +175,51 @@
   50% {
     opacity: 0.5;
   }
+}
+
+/* ========== 节点执行状态样式 ========== */
+
+/* 节点运行状态 */
+.flow-node.node-running {
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  animation: nodePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+  }
+}
+
+/* 节点完成状态 */
+.flow-node.node-completed {
+  border: 2px solid var(--success);
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.2);
+}
+
+/* 节点错误状态 */
+.flow-node.node-error {
+  border: 2px solid var(--error);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+/* 运行状态的图标 */
+.node-status-badge.running {
+  font-size: 10px;
+}
+
+/* 完成状态的图标 */
+.node-status-badge.completed {
+  font-size: 10px;
+}
+
+/* 错误状态的图标 */
+.node-status-badge.error {
+  font-size: 10px;
 }
 
 /* 执行时间标签 */

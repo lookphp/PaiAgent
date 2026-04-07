@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Typography, Tag } from 'antd';
-import { SoundOutlined } from '@ant-design/icons';
+import { SoundOutlined, LoadingOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import './index.css';
 
 const { Text } = Typography;
@@ -16,16 +16,25 @@ const toolIconMap: Record<string, React.ReactNode> = {
   'audio-synthesis': <SoundOutlined />,
 };
 
+// 状态图标映射
+const statusIconMap: Record<string, React.ReactNode> = {
+  idle: null,
+  running: <LoadingOutlined spin />,
+  completed: <CheckCircleOutlined />,
+  error: <ExclamationCircleOutlined />,
+};
+
 const ToolNode: React.FC<NodeProps> = (props) => {
   const data = props.data as any;
   const selected = props.selected;
+  const executionStatus = data?.executionStatus || 'idle';
 
   const toolType = data?.toolType || '';
   const toolName = toolTypeMap[toolType] || toolType || '工具';
   const toolIcon = toolIconMap[toolType] || <SoundOutlined />;
 
   return (
-    <div className={`flow-node tool-node ${selected ? 'selected' : ''}`}>
+    <div className={`flow-node tool-node ${selected ? 'selected' : ''} node-${executionStatus}`}>
       {/* 节点头部：图标 + 标题 */}
       <div className="node-header">
         <div className="node-icon tool">
@@ -46,7 +55,11 @@ const ToolNode: React.FC<NodeProps> = (props) => {
 
       {/* 状态指示器 */}
       <div className="node-status">
-        <div className="node-status-badge idle" />
+        {statusIconMap[executionStatus] && (
+          <div className={`node-status-badge ${executionStatus}`}>
+            {statusIconMap[executionStatus]}
+          </div>
+        )}
       </div>
 
       {/* 输入连接点 */}

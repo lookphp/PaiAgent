@@ -377,7 +377,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
       width={800}
       footer={null}
       closable={!isRunning && currentStep !== 'suspended'}
-      maskClosable={!isRunning && currentStep !== 'suspended'}
+      mask={{ closable: !isRunning && currentStep !== 'suspended' }}
     >
       {/* 输入阶段 */}
       {currentStep === 'input' && (
@@ -400,7 +400,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
             <div style={{ marginBottom: 8 }}>
               <Text strong>执行选项</Text>
             </div>
-            <Space direction="vertical">
+            <Space orientation="vertical">
               <Checkbox
                 checked={suspendConfig.includes('llm')}
                 onChange={(e) => {
@@ -486,104 +486,103 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
             size="small"
             style={{ maxHeight: 350, overflow: 'auto' }}
           >
-            <Timeline mode="left">
-              {/* 开始节点 */}
-              <Timeline.Item
-                dot={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-              >
-                <div>
-                  <Text strong>开始执行</Text>
-                  <div style={{ fontSize: 12, color: '#999' }}>
-                    输入内容: {input.slice(0, 50)}{input.length > 50 ? '...' : ''}
-                  </div>
-                </div>
-              </Timeline.Item>
-
-              {/* 各节点执行 */}
-              {logs.map((log, index) => (
-                <Timeline.Item
-                  key={log.id}
-                  dot={
+            <Timeline
+              mode="start"
+              items={[
+                {
+                  key: 'start',
+                  icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+                  content: (
+                    <div>
+                      <Text strong>开始执行</Text>
+                      <div style={{ fontSize: 12, color: '#999' }}>
+                        输入内容: {input.slice(0, 50)}{input.length > 50 ? '...' : ''}
+                      </div>
+                    </div>
+                  ),
+                },
+                ...logs.map((log) => ({
+                  key: log.id,
+                  icon:
                     log.status === 'running' ? (
                       <LoadingOutlined spin style={{ color: '#1890ff' }} />
                     ) : log.status === 'success' ? (
                       <CheckOutlined style={{ color: '#52c41a' }} />
                     ) : (
                       <ClockCircleOutlined style={{ color: '#999' }} />
-                    )
-                  }
-                  color={
+                    ),
+                  color:
                     log.status === 'success'
                       ? 'green'
                       : log.status === 'running'
                       ? 'blue'
-                      : 'gray'
-                  }
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '4px 0',
-                    }}
-                  >
-                    <span
+                      : 'gray',
+                  content: (
+                    <div
                       style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: 4,
-                        background: getNodeColor(log.nodeType),
-                        color: '#fff',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
+                        gap: 8,
+                        padding: '4px 0',
                       }}
                     >
-                      {getNodeIcon(log.nodeType)}
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500 }}>
-                        {log.nodeLabel}
-                        {log.timestamp && (
-                          <span style={{ fontSize: 11, color: '#999', marginLeft: 8, fontWeight: 400 }}>
-                            {log.timestamp}
-                          </span>
-                        )}
+                      <span
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 4,
+                          background: getNodeColor(log.nodeType),
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                        }}
+                      >
+                        {getNodeIcon(log.nodeType)}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 500 }}>
+                          {log.nodeLabel}
+                          {log.timestamp && (
+                            <span style={{ fontSize: 11, color: '#999', marginLeft: 8, fontWeight: 400 }}>
+                              {log.timestamp}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#999' }}>
+                          {log.status === 'pending' && '等待执行'}
+                          {log.status === 'running' && '执行中...'}
+                          {log.status === 'success' && (
+                            <span>
+                              执行完成 {log.durationMs ? `(${log.durationMs}ms)` : ''}
+                              {log.totalTokens && log.totalTokens > 0 && (
+                                <span style={{ color: '#1677ff', marginLeft: 8 }}>
+                                  Token: {log.totalTokens.toLocaleString()}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 12, color: '#999' }}>
-                        {log.status === 'pending' && '等待执行'}
-                        {log.status === 'running' && '执行中...'}
-                        {log.status === 'success' && (
-                          <span>
-                            执行完成 {log.durationMs ? `(${log.durationMs}ms)` : ''}
-                            {log.totalTokens && log.totalTokens > 0 && (
-                              <span style={{ color: '#1677ff', marginLeft: 8 }}>
-                                Token: {log.totalTokens.toLocaleString()}
-                              </span>
-                            )}
-                          </span>
-                        )}
-                      </div>
+                      <Tag
+                        color={
+                          log.status === 'success'
+                            ? 'success'
+                            : log.status === 'running'
+                            ? 'processing'
+                            : 'default'
+                        }
+                      >
+                        {log.status === 'pending' && '等待'}
+                        {log.status === 'running' && '执行中'}
+                        {log.status === 'success' && '完成'}
+                      </Tag>
                     </div>
-                    <Tag
-                      color={
-                        log.status === 'success'
-                          ? 'success'
-                          : log.status === 'running'
-                          ? 'processing'
-                          : 'default'
-                      }
-                    >
-                      {log.status === 'pending' && '等待'}
-                      {log.status === 'running' && '执行中'}
-                      {log.status === 'success' && '完成'}
-                    </Tag>
-                  </div>
-                </Timeline.Item>
-              ))}
-            </Timeline>
+                  ),
+                })),
+              ]}
+            />
           </Card>
         </div>
       )}
@@ -594,7 +593,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           <Alert
             type="info"
             showIcon
-            message="工作流已暂停"
+            title="工作流已暂停"
             description={`节点 "${suspendedData.nodeType}" 执行完成，您可以编辑输出内容后继续执行`}
             style={{ marginBottom: 16 }}
           />
@@ -605,13 +604,13 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
             size="small"
             style={{ maxHeight: 200, overflow: 'auto', marginBottom: 16 }}
           >
-            <Timeline mode="left">
-              {logs.map((log, index) => (
-                <Timeline.Item
-                  key={log.id}
-                  dot={<CheckOutlined style={{ color: '#52c41a' }} />}
-                  color="green"
-                >
+            <Timeline
+              mode="start"
+              items={logs.map((log) => ({
+                key: log.id,
+                icon: <CheckOutlined style={{ color: '#52c41a' }} />,
+                color: 'green',
+                content: (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
                     <span
                       style={{
@@ -636,9 +635,9 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                     </div>
                     <Tag color="success">完成</Tag>
                   </div>
-                </Timeline.Item>
-              ))}
-            </Timeline>
+                ),
+              }))}
+            />
           </Card>
 
           {/* 编辑区域 */}
@@ -687,7 +686,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
           {result.success ? (
             <>
               <Alert
-                message="执行成功"
+                title="执行成功"
                 type="success"
                 showIcon
                 style={{ marginBottom: 16 }}
@@ -700,14 +699,14 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                     <div style={{ fontSize: 12, color: '#999' }}>执行节点</div>
                     <div style={{ fontSize: 20, fontWeight: 600 }}>{nodes.length}</div>
                   </div>
-                  <Divider type="vertical" style={{ height: 40 }} />
+                  <Divider orientation="vertical" style={{ height: 40 }} />
                   <div style={{ flex: 1, textAlign: 'center', minWidth: 80 }}>
                     <div style={{ fontSize: 12, color: '#999' }}>总耗时</div>
                     <div style={{ fontSize: 20, fontWeight: 600 }}>
                       {result.totalDuration ? `${result.totalDuration}ms` : `${logs.reduce((sum, log) => sum + (log.durationMs || 0), 0)}ms`}
                     </div>
                   </div>
-                  <Divider type="vertical" style={{ height: 40 }} />
+                  <Divider orientation="vertical" style={{ height: 40 }} />
                   <div style={{ flex: 1, textAlign: 'center', minWidth: 100 }}>
                     <div style={{ fontSize: 12, color: '#999' }}>Token 使用</div>
                     <div style={{ fontSize: 20, fontWeight: 600, color: '#1677ff' }}>

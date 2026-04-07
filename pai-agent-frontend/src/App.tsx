@@ -363,7 +363,7 @@ function App() {
         {draftData && (
           <div style={{ padding: '16px 0' }}>
             <div style={{ marginBottom: 16 }}>
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <ClockCircleOutlined style={{ color: '#8c8c8c' }} />
                   <Text type="secondary">上次编辑时间：</Text>

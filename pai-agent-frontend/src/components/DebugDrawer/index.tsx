@@ -33,10 +33,10 @@ import 'react-h5-audio-player/lib/styles.css';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
 import SuspendedEditor from '../SuspendedEditor';
+import type { ExecutionEvent } from '../../types/workflow';
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
-const { Panel } = Collapse;
 
 interface DebugDrawerProps {}
 
@@ -63,6 +63,9 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
     setSuspendedData,
     setSuspendConfig,
     resetExecution,
+    handleExecutionEvent,
+    setCloseSSEConnection,
+    clearAllNodeExecutionStatus,
   } = useWorkflowStore();
 
   const handleRun = async () => {
@@ -71,113 +74,38 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
     // 先重置状态，再设置执行中
     resetExecution();
     setIsExecuting(true);
+    clearAllNodeExecutionStatus();
     addExecutionLog({ message: '开始执行工作流...', type: 'system' });
     addExecutionLog({ message: `输入: ${debugInput}`, type: 'input' });
 
-    try {
-      let response;
-      const suspendOnNodeTypes = suspendConfig.nodeTypes.length > 0 ? suspendConfig.nodeTypes : undefined;
+    // 构建 SSE 执行请求
+    const request = {
+      workflowId: currentWorkflow?.id ? Number(currentWorkflow.id) : 0,
+      input: debugInput,
+      parameters: currentWorkflow?.id ? undefined : {
+        nodes: JSON.stringify(nodes),
+        edges: JSON.stringify(edges),
+      },
+    };
 
-      if (currentWorkflow?.id) {
-        response = await workflowApi.startExecution({
-          workflowId: Number(currentWorkflow.id),
-          input: debugInput,
-          suspendOnNodeTypes,
-        });
-      } else {
-        response = await workflowApi.startExecution({
-          workflowId: 0,
-          input: debugInput,
-          parameters: {
-            nodes: JSON.stringify(nodes),
-            edges: JSON.stringify(edges),
-          },
-          suspendOnNodeTypes,
-        });
-      }
-
-      // 设置执行会话ID
-      if (response.executionId) {
-        setExecutionSessionId(response.executionId);
-      }
-
-      if (response.success) {
-        if (response.status?.toLowerCase() === 'suspended') {
-          // 暂停状态
-          setExecutionStatus('suspended');
-
-          // 只添加节点执行完成的日志（有 nodeType 的）
-          response.logs?.filter((log: any) => log.nodeType).forEach((log: any) => {
-            addExecutionLog({
-              message: log.message,
-              durationMs: log.durationMs,
-              nodeType: log.nodeType,
-              nodeId: log.nodeId,
-              nodeLabel: log.nodeLabel,
-              output: log.output,
-              type: log.nodeType || 'system',
-              inputTokens: log.inputTokens,
-              outputTokens: log.outputTokens,
-              totalTokens: log.totalTokens,
-            });
-          });
-
-          // 最后添加暂停提示日志
-          if (response.suspendedNodeId && response.suspendedNodeType && response.suspendedOutput) {
-            setSuspendedData({
-              nodeId: response.suspendedNodeId,
-              nodeType: response.suspendedNodeType,
-              output: response.suspendedOutput,
-            });
-            addExecutionLog({
-              message: `节点 ${response.suspendedNodeType} 执行完成，等待编辑`,
-              nodeType: response.suspendedNodeType,
-              nodeId: response.suspendedNodeId,
-              output: response.suspendedOutput,
-              type: 'suspended',
-            });
-          }
-        } else {
-          // 完成
-          setExecutionStatus('completed');
-          // 只添加节点执行完成的日志（有 nodeType 的）
-          response.logs?.filter((log: any) => log.nodeType).forEach((log: any) => {
-            addExecutionLog({
-              message: log.message,
-              durationMs: log.durationMs,
-              nodeType: log.nodeType,
-              nodeId: log.nodeId,
-              nodeLabel: log.nodeLabel,
-              output: log.output,
-              type: log.nodeType || 'system',
-              inputTokens: log.inputTokens,
-              outputTokens: log.outputTokens,
-              totalTokens: log.totalTokens,
-            });
-          });
-          addExecutionLog({ message: '执行完成', type: 'success' });
-          setExecutionResult({
-            success: true,
-            output: response.output,
-            audioUrl: response.audioUrl,
-            totalDuration: response.totalDuration,
-            totalTokens: response.totalTokens,
-            totalInputTokens: response.totalInputTokens,
-            totalOutputTokens: response.totalOutputTokens,
-          });
-        }
-      } else {
+    // 使用 SSE 实时执行
+    const closeConnection = workflowApi.executeStream(
+      request,
+      (event: ExecutionEvent) => {
+        // 处理 SSE 事件
+        handleExecutionEvent(event);
+      },
+      (error: Error) => {
+        // 处理错误
         setExecutionStatus('error');
-        addExecutionLog({ message: `执行失败: ${response.error}`, type: 'error' });
-        setExecutionResult({ success: false, error: response.error });
+        setIsExecuting(false);
+        addExecutionLog({ message: `错误: ${error.message}`, type: 'error' });
+        setExecutionResult({ success: false, error: error.message });
       }
-    } catch (error: any) {
-      setExecutionStatus('error');
-      addExecutionLog({ message: `错误: ${error.message}`, type: 'error' });
-      setExecutionResult({ success: false, error: error.message });
-    } finally {
-      setIsExecuting(false);
-    }
+    );
+
+    // 保存关闭连接函数
+    setCloseSSEConnection(() => closeConnection);
   };
 
   const handleClear = () => {
@@ -268,7 +196,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
                 onChange={handleSuspendConfigChange}
                 style={{ width: '100%' }}
               >
-                <Space direction="vertical">
+                <Space orientation="vertical">
                   <Checkbox value="llm">
                     <Space>
                       <Tag color="purple" style={{ fontSize: 11 }}>LLM</Tag>
@@ -452,109 +380,110 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
             {executionLogs.length === 0 ? (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无日志" />
             ) : (
-              <Timeline style={{ paddingLeft: 0 }}>
-                {executionLogs.map((log, index) => {
+              <Timeline
+                style={{ paddingLeft: 0 }}
+                items={executionLogs.map((log, index) => {
                   const config = getNodeTypeConfig(log.type || 'system');
-                  return (
-                    <Timeline.Item
-                      key={index}
-                      dot={
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            background: config.color,
-                          }}
-                        />
-                      }
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ marginBottom: 4 }}>
-                            <Text style={{ fontSize: 13 }}>{log.message}</Text>
-                            {log.timestamp && (
-                              <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>
-                                {log.timestamp}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            {log.nodeLabel && (
-                              <Tag
-                                style={{
-                                  background: `${config.color}20`,
-                                  borderColor: config.color,
-                                  color: config.color,
-                                  fontSize: 11,
-                                }}
-                              >
-                                {log.nodeLabel}
-                              </Tag>
-                            )}
-                            {log.durationMs && log.durationMs > 0 && (
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: '#6b7280',
-                                  background: '#f3f4f6',
-                                  padding: '2px 6px',
-                                  borderRadius: 4,
-                                  fontFamily: 'monospace',
-                                }}
-                              >
-                                {log.durationMs}ms
-                              </span>
-                            )}
-                            {log.totalTokens && log.totalTokens > 0 && (
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: '#1677ff',
-                                  background: '#e6f4ff',
-                                  padding: '2px 6px',
-                                  borderRadius: 4,
-                                  fontFamily: 'monospace',
-                                }}
-                              >
-                                {log.totalTokens.toLocaleString()} tokens
-                              </span>
-                            )}
+                  return {
+                    key: index,
+                    icon: (
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background: config.color,
+                        }}
+                      />
+                    ),
+                    content: (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ marginBottom: 4 }}>
+                              <Text style={{ fontSize: 13 }}>{log.message}</Text>
+                              {log.timestamp && (
+                                <span style={{ fontSize: 11, color: '#999', marginLeft: 8 }}>
+                                  {log.timestamp}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              {log.nodeLabel && (
+                                <Tag
+                                  style={{
+                                    background: `${config.color}20`,
+                                    borderColor: config.color,
+                                    color: config.color,
+                                    fontSize: 11,
+                                  }}
+                                >
+                                  {log.nodeLabel}
+                                </Tag>
+                              )}
+                              {log.durationMs && log.durationMs > 0 && (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: '#6b7280',
+                                    background: '#f3f4f6',
+                                    padding: '2px 6px',
+                                    borderRadius: 4,
+                                    fontFamily: 'monospace',
+                                  }}
+                                >
+                                  {log.durationMs}ms
+                                </span>
+                              )}
+                              {log.totalTokens && log.totalTokens > 0 && (
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: '#1677ff',
+                                    background: '#e6f4ff',
+                                    padding: '2px 6px',
+                                    borderRadius: 4,
+                                    fontFamily: 'monospace',
+                                  }}
+                                >
+                                  {log.totalTokens.toLocaleString()} tokens
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      {log.output && (
-                        <Collapse ghost style={{ marginTop: 8 }}>
-                          <Panel
-                            header={
-                              <Text type="secondary" style={{ fontSize: 11 }}>
-                                查看输出
-                              </Text>
-                            }
-                            key="1"
-                          >
-                            <div
-                              style={{
-                                padding: 8,
-                                background: '#f9fafb',
-                                borderRadius: 4,
-                                fontSize: 12,
-                                fontFamily: 'monospace',
-                                whiteSpace: 'pre-wrap',
-                                wordBreak: 'break-word',
-                                maxHeight: 200,
-                                overflow: 'auto',
-                              }}
-                            >
-                              {log.output}
-                            </div>
-                          </Panel>
-                        </Collapse>
-                      )}
-                    </Timeline.Item>
-                  );
+                        {log.output && (
+                          <Collapse
+                            ghost
+                            style={{ marginTop: 8 }}
+                            items={[{
+                              key: '1',
+                              label: <Text type="secondary" style={{ fontSize: 11 }}>查看输出</Text>,
+                              children: (
+                                <div
+                                  style={{
+                                    padding: 8,
+                                    background: '#f9fafb',
+                                    borderRadius: 4,
+                                    fontSize: 12,
+                                    fontFamily: 'monospace',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    maxHeight: 200,
+                                    overflow: 'auto',
+                                  }}
+                                >
+                                  {log.output}
+                                </div>
+                              ),
+                            }]}
+                          />
+                        )}
+                      </>
+                    ),
+                  };
                 })}
-              </Timeline>
+              />
             )}
           </div>
         </div>

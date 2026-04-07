@@ -98,9 +98,8 @@ const NodeConfigPanel: React.FC = () => {
         outputFormat: selectedNode.data?.outputFormat,
         ...selectedNode.data,
       });
-    } else {
-      form.resetFields();
     }
+    // 注意：不在这里调用 resetFields()，因为 Form 可能未挂载
   }, [selectedNode, form]);
 
   const handleSave = () => {
@@ -244,7 +243,7 @@ const NodeConfigPanel: React.FC = () => {
                       </Popconfirm>
                     }
                   >
-                    <Space direction="vertical" style={{ width: '100%' }}>
+                    <Space orientation="vertical" style={{ width: '100%' }}>
                       <Form.Item
                         {...field}
                         label={`参数 ${index + 1} 名称`}
@@ -400,7 +399,7 @@ const NodeConfigPanel: React.FC = () => {
                     </Popconfirm>
                   }
                 >
-                  <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space orientation="vertical" style={{ width: '100%' }}>
                     <Form.Item
                       {...field}
                       label={`输出 ${index + 1} 名称`}

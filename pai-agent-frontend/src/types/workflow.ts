@@ -112,3 +112,37 @@ export interface SuspendedData {
 export interface SuspendConfig {
   nodeTypes: string[];
 }
+
+// SSE 执行事件接口
+export interface ExecutionEvent {
+  /** 事件类型: node_start, node_complete, workflow_complete, workflow_error */
+  eventType: string;
+  /** 节点 ID */
+  nodeId?: string;
+  /** 节点类型 (input, llm, tool, output) */
+  nodeType?: string;
+  /** 节点名称 */
+  nodeLabel?: string;
+  /** 执行状态 (running, completed, error) */
+  status: string;
+  /** 输出内容 */
+  output?: string;
+  /** 错误信息 */
+  error?: string;
+  /** 执行耗时 (毫秒) */
+  durationMs?: number;
+  /** 输入 token 数量 */
+  inputTokens?: number;
+  /** 输出 token 数量 */
+  outputTokens?: number;
+  /** 总 token 数量 */
+  totalTokens?: number;
+  /** 音频 URL */
+  audioUrl?: string;
+  /** 最终输出内容 */
+  finalOutput?: string;
+  /** 总执行耗时 */
+  totalDuration?: number;
+  /** 事件时间戳 */
+  timestamp?: number;
+}

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Node, Edge } from '@xyflow/react';
-import type { Workflow, ExecutionResponse, ExecutionStatus, SuspendedData, SuspendConfig } from '../types/workflow';
+import type { Workflow, ExecutionResponse, ExecutionStatus, SuspendedData, SuspendConfig, ExecutionEvent } from '../types/workflow';
 
 interface WorkflowState {
   // 工作流列表
@@ -19,6 +19,9 @@ interface WorkflowState {
   executionLogs: { timestamp: string; message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string; inputTokens?: number; outputTokens?: number; totalTokens?: number }[];
   executionResult: ExecutionResponse | null;
 
+  // 节点执行状态 (用于在画布上显示节点状态)
+  nodeExecutionStatus: Record<string, 'idle' | 'running' | 'completed' | 'error'>;
+
   // 增量执行状态
   executionSessionId: number | null;
   executionStatus: ExecutionStatus;
@@ -33,6 +36,9 @@ interface WorkflowState {
   // 节点配置面板状态
   configDrawerOpen: boolean;
   selectedNode: Node | null;
+
+  // SSE 连接关闭函数
+  closeSSEConnection: (() => void) | null;
 
   // Actions - 工作流管理
   addWorkflow: (workflow: Workflow) => void;
@@ -57,6 +63,14 @@ interface WorkflowState {
   setIsExecuting: (executing: boolean) => void;
   addExecutionLog: (log: { message: string; durationMs?: number; nodeType?: string; nodeId?: string; nodeLabel?: string; output?: string; type?: string; inputTokens?: number; outputTokens?: number; totalTokens?: number }) => void;
   setExecutionResult: (result: ExecutionResponse | null) => void;
+
+  // Actions - 节点执行状态
+  setNodeExecutionStatus: (nodeId: string, status: 'idle' | 'running' | 'completed' | 'error') => void;
+  clearAllNodeExecutionStatus: () => void;
+  handleExecutionEvent: (event: ExecutionEvent) => void;
+
+  // Actions - SSE 连接
+  setCloseSSEConnection: (closeFunc: (() => void) | null) => void;
 
   // Actions - 增量执行
   setExecutionSessionId: (id: number | null) => void;
@@ -100,6 +114,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   isExecuting: false,
   executionLogs: [],
   executionResult: null,
+  nodeExecutionStatus: {},
   executionSessionId: null,
   executionStatus: 'idle',
   suspendedData: null,
@@ -109,6 +124,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   debugInput: '',
   configDrawerOpen: false,
   selectedNode: null,
+  closeSSEConnection: null,
 
   // 工作流管理
   addWorkflow: (workflow) => {
@@ -249,6 +265,77 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
   setExecutionResult: (result) => set({ executionResult: result }),
 
+  // 节点执行状态管理
+  setNodeExecutionStatus: (nodeId, status) => set((state) => ({
+    nodeExecutionStatus: { ...state.nodeExecutionStatus, [nodeId]: status },
+  })),
+
+  clearAllNodeExecutionStatus: () => set({ nodeExecutionStatus: {} }),
+
+  handleExecutionEvent: (event) => {
+    const { eventType, nodeId, nodeType, nodeLabel, status, output, durationMs, inputTokens, outputTokens, totalTokens, error, finalOutput, audioUrl, totalDuration } = event;
+
+    // 根据事件类型处理
+    if (eventType === 'node_start') {
+      // 节点开始执行
+      set((state) => ({
+        nodeExecutionStatus: { ...state.nodeExecutionStatus, [nodeId!]: 'running' },
+      }));
+      get().addExecutionLog({
+        message: `${nodeLabel} 开始执行`,
+        nodeType: nodeType!,
+        nodeId: nodeId!,
+        nodeLabel: nodeLabel!,
+        type: nodeType!,
+      });
+    } else if (eventType === 'node_complete') {
+      // 节点执行完成
+      set((state) => ({
+        nodeExecutionStatus: { ...state.nodeExecutionStatus, [nodeId!]: 'completed' },
+      }));
+      get().addExecutionLog({
+        message: `${nodeLabel} 执行完成`,
+        durationMs: durationMs!,
+        nodeType: nodeType!,
+        nodeId: nodeId!,
+        nodeLabel: nodeLabel!,
+        output: output,
+        type: nodeType!,
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        totalTokens: totalTokens,
+      });
+    } else if (eventType === 'workflow_complete') {
+      // 工作流完成
+      set({
+        executionStatus: 'completed',
+        isExecuting: false,
+        executionResult: {
+          success: true,
+          output: finalOutput,
+          audioUrl: audioUrl,
+          totalDuration: totalDuration,
+          totalTokens: totalTokens,
+          totalInputTokens: inputTokens,
+          totalOutputTokens: outputTokens,
+        },
+      });
+      get().addExecutionLog({ message: '执行完成', type: 'success' });
+    } else if (eventType === 'workflow_error') {
+      // 工作流出错
+      set({
+        executionStatus: 'error',
+        isExecuting: false,
+        nodeExecutionStatus: nodeId ? { ...get().nodeExecutionStatus, [nodeId]: 'error' } : get().nodeExecutionStatus,
+        executionResult: { success: false, error: error },
+      });
+      get().addExecutionLog({ message: `执行失败: ${error}`, type: 'error' });
+    }
+  },
+
+  // SSE 连接管理
+  setCloseSSEConnection: (closeFunc) => set({ closeSSEConnection: closeFunc }),
+
   // 增量执行状态管理
   setExecutionSessionId: (id) => set({ executionSessionId: id }),
   setExecutionStatus: (status) => set({ executionStatus: status }),
@@ -260,15 +347,24 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
   setSuspendConfig: (config) => set({ suspendConfig: config }),
   setEditedOutput: (output) => set({ editedOutput: output }),
-  resetExecution: () => set({
-    executionSessionId: null,
-    executionStatus: 'idle',
-    suspendedData: null,
-    editedOutput: '',
-    executionLogs: [],
-    executionResult: null,
-    isExecuting: false,
-  }),
+  resetExecution: () => {
+    // 关闭 SSE 连接（如果存在）
+    const { closeSSEConnection } = get();
+    if (closeSSEConnection) {
+      closeSSEConnection();
+    }
+    set({
+      executionSessionId: null,
+      executionStatus: 'idle',
+      suspendedData: null,
+      editedOutput: '',
+      executionLogs: [],
+      executionResult: null,
+      isExecuting: false,
+      nodeExecutionStatus: {},
+      closeSSEConnection: null,
+    });
+  },
 
   // 调试抽屉管理
   setDebugDrawerOpen: (open) => set({ debugDrawerOpen: open }),

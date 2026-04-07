@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Typography, Tag } from 'antd';
-import { RobotOutlined } from '@ant-design/icons';
+import { RobotOutlined, LoadingOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import './index.css';
 
 const { Text } = Typography;
@@ -16,15 +16,24 @@ const modelNameMap: Record<string, string> = {
   'zhipu-chat': '智谱 AI',
 };
 
+// 状态图标映射
+const statusIconMap: Record<string, React.ReactNode> = {
+  idle: null,
+  running: <LoadingOutlined spin />,
+  completed: <CheckCircleOutlined />,
+  error: <ExclamationCircleOutlined />,
+};
+
 const LLMNode: React.FC<NodeProps> = (props) => {
   const data = props.data as any;
   const selected = props.selected;
+  const executionStatus = data?.executionStatus || 'idle';
 
   const modelName = modelNameMap[data?.model] || data?.model || '大模型';
   const temperature = data?.temperature;
 
   return (
-    <div className={`flow-node llm-node ${selected ? 'selected' : ''}`}>
+    <div className={`flow-node llm-node ${selected ? 'selected' : ''} node-${executionStatus}`}>
       {/* 节点头部：图标 + 标题 */}
       <div className="node-header">
         <div className="node-icon llm">
@@ -45,7 +54,11 @@ const LLMNode: React.FC<NodeProps> = (props) => {
 
       {/* 状态指示器 */}
       <div className="node-status">
-        <div className="node-status-badge idle" />
+        {statusIconMap[executionStatus] && (
+          <div className={`node-status-badge ${executionStatus}`}>
+            {statusIconMap[executionStatus]}
+          </div>
+        )}
       </div>
 
       {/* 输入连接点 */}
