@@ -14,6 +14,7 @@ import {
   Progress,
   message,
   Checkbox,
+  Empty,
 } from 'antd';
 import {
   PlayCircleOutlined,
@@ -35,6 +36,7 @@ import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
+import type { ExecutionEvent } from '../../types/workflow';
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -66,7 +68,7 @@ interface SuspendedData {
 }
 
 const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) => {
-  const { currentWorkflow, nodes, edges } = useWorkflowStore();
+  const { currentWorkflow, nodes, edges, setNodeExecutionStatus, clearAllNodeExecutionStatus } = useWorkflowStore();
   const [input, setInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState<'input' | 'running' | 'suspended' | 'result'>('input');
@@ -88,6 +90,9 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
   const [suspendedData, setSuspendedData] = useState<SuspendedData | null>(null);
   const [editedOutput, setEditedOutput] = useState('');
 
+  // SSE 关闭函数
+  const [closeSSE, setCloseSSE] = useState<(() => void) | null>(null);
+
   // 重置状态
   useEffect(() => {
     if (open) {
@@ -100,8 +105,9 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
       setSuspendConfig([]);
       setSuspendedData(null);
       setEditedOutput('');
+      clearAllNodeExecutionStatus();
     }
-  }, [open]);
+  }, [open, clearAllNodeExecutionStatus]);
 
   const handleRun = async () => {
     if (!input.trim() || isRunning) return;
@@ -136,99 +142,85 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
     setCurrentStep('running');
     setResult(null);
     setSuspendedData(null);
-    setProgress(10);
+    setProgress(5);
+    clearAllNodeExecutionStatus();
 
-    try {
-      const suspendOnNodeTypes = suspendConfig.length > 0 ? suspendConfig : undefined;
+    // 使用 SSE 实时执行
+    const request = {
+      workflowId: currentWorkflow?.id ? Number(currentWorkflow.id) : 0,
+      input: input,
+      parameters: currentWorkflow?.id ? undefined : {
+        nodes: JSON.stringify(nodes),
+        edges: JSON.stringify(edges),
+      },
+    };
 
-      let response;
-      if (currentWorkflow?.id) {
-        response = await workflowApi.startExecution({
-          workflowId: Number(currentWorkflow.id),
-          input: input,
-          suspendOnNodeTypes,
-        });
-      } else {
-        response = await workflowApi.startExecution({
-          workflowId: 0,
-          input: input,
-          parameters: {
-            nodes: JSON.stringify(nodes),
-            edges: JSON.stringify(edges),
-          },
-          suspendOnNodeTypes,
-        });
-      }
+    const closeConnection = workflowApi.executeStream(
+      request,
+      (event: ExecutionEvent) => {
+        const { eventType, nodeId, nodeType, nodeLabel, status, output, durationMs, inputTokens, outputTokens, totalTokens, error, finalOutput, audioUrl, totalDuration } = event;
 
-      // 使用真实返回的日志，只保留节点执行完成的日志
-      if (response.logs && response.logs.length > 0) {
-        // 过滤出有 nodeType 的日志（节点执行完成记录）
-        const nodeLogs = response.logs.filter((log: any) => log.nodeType);
-        const realLogs: ExecutionLog[] = nodeLogs.map((log: any, index: number) => ({
-          id: `log-${index}`,
-          message: log.message,
-          timestamp: new Date().toLocaleTimeString(),
-          status: 'success',
-          nodeType: log.nodeType,
-          nodeLabel: log.nodeLabel,
-          durationMs: log.durationMs,
-          output: log.output,
-          inputTokens: log.inputTokens,
-          outputTokens: log.outputTokens,
-          totalTokens: log.totalTokens,
-        }));
-        setLogs(realLogs);
-        // 根据节点日志数量计算进度
-        const progressPercent = Math.min(90, realLogs.length * 25);
-        setProgress(progressPercent);
-      }
-
-      // 处理暂停状态
-      if (response.status?.toLowerCase() === 'suspended' && response.executionId) {
-        setProgress(50);
-        setSuspendedData({
-          executionId: response.executionId,
-          nodeId: response.suspendedNodeId || '',
-          nodeType: response.suspendedNodeType || '',
-          output: response.suspendedOutput || '',
-        });
-        setEditedOutput(response.suspendedOutput || '');
-        setCurrentStep('suspended');
+        if (eventType === 'node_start' && nodeId) {
+          // 节点开始执行
+          setNodeExecutionStatus(nodeId, 'running');
+          setProgress((prev) => Math.min(90, prev + 15));
+        } else if (eventType === 'node_complete' && nodeId) {
+          // 节点执行完成
+          setNodeExecutionStatus(nodeId, 'completed');
+          setLogs((prev) => [...prev, {
+            id: `log-${nodeId}-${Date.now()}`,
+            message: `${nodeLabel} 执行完成`,
+            timestamp: new Date().toLocaleTimeString(),
+            status: 'success',
+            nodeType: nodeType,
+            nodeLabel: nodeLabel,
+            durationMs: durationMs,
+            output: output,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            totalTokens: totalTokens,
+          }]);
+          setProgress((prev) => Math.min(90, prev + 20));
+        } else if (eventType === 'workflow_complete') {
+          // 工作流完成
+          setProgress(100);
+          setIsRunning(false);
+          setCurrentStep('result');
+          setResult({
+            success: true,
+            output: finalOutput,
+            audioUrl: audioUrl,
+            totalDuration: totalDuration,
+            totalTokens: totalTokens,
+            totalInputTokens: inputTokens,
+            totalOutputTokens: outputTokens,
+          });
+        } else if (eventType === 'workflow_error') {
+          // 工作流出错
+          setProgress(100);
+          setIsRunning(false);
+          setCurrentStep('result');
+          if (nodeId) {
+            setNodeExecutionStatus(nodeId, 'error');
+          }
+          setResult({
+            success: false,
+            error: error,
+          });
+        }
+      },
+      (error: Error) => {
+        setProgress(100);
         setIsRunning(false);
-        return;
-      }
-
-      setCurrentStep('result');
-      setProgress(100);
-
-      if (response.success) {
-        setResult({
-          success: true,
-          output: response.output,
-          audioUrl: response.audioUrl,
-          totalDuration: response.totalDuration,
-          totalTokens: response.totalTokens,
-          totalInputTokens: response.totalInputTokens,
-          totalOutputTokens: response.totalOutputTokens,
-        });
-      } else {
+        setCurrentStep('result');
         setResult({
           success: false,
-          error: response.error,
-          totalDuration: response.totalDuration,
-          totalTokens: response.totalTokens,
+          error: error.message || '执行失败',
         });
       }
-    } catch (error: any) {
-      setCurrentStep('result');
-      setProgress(100);
-      setResult({
-        success: false,
-        error: error.message || '执行失败',
-      });
-    } finally {
-      setIsRunning(false);
-    }
+    );
+
+    setCloseSSE(() => closeConnection);
   };
 
   // 继续执行（恢复）
@@ -324,6 +316,10 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
 
   const handleClose = () => {
     if (!isRunning) {
+      // 关闭 SSE 连接
+      if (closeSSE) {
+        closeSSE();
+      }
       onClose();
     }
   };

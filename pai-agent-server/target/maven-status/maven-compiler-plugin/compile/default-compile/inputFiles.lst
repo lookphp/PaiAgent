@@ -12,8 +12,10 @@
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/executor/LLMNodeExecutor.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/model/ExecutionHistory.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/MinioService.java
+/Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/controller/ExecutionEventController.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/dto/ExecutionRequest.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/AudioSynthesisServiceImpl.java
+/Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/dto/ExecutionEvent.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/controller/WorkflowController.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/model/Workflow.java
 /Users/liuxingwang/Documents/java/PaiAgent-Claude/pai-agent-server/src/main/java/com/paiagent/service/AudioSynthesisService.java
