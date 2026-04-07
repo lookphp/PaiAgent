@@ -717,70 +717,6 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                 </div>
               </Card>
 
-              {/* 文本输出 */}
-              {result.output && (
-                <Card
-                  title={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span><FileTextOutlined /> 文本输出</span>
-                      <Space>
-                        <Tag style={{ fontSize: 11 }}>{result.output.length} 字符</Tag>
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<CopyOutlined />}
-                          onClick={() => {
-                            navigator.clipboard.writeText(result.output || '');
-                            message.success('已复制到剪贴板');
-                          }}
-                        >
-                          复制
-                        </Button>
-                      </Space>
-                    </div>
-                  }
-                  size="small"
-                  style={{ marginBottom: 16 }}
-                >
-                  <div
-                    style={{
-                      padding: 12,
-                      background: '#f6ffed',
-                      borderRadius: 6,
-                      maxHeight: 200,
-                      overflow: 'auto',
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontFamily: 'monospace',
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
-                      }}
-                    >
-                      {result.output}
-                    </Text>
-                  </div>
-                </Card>
-              )}
-
-              {/* 音频输出 */}
-              {result.audioUrl && (
-                <Card
-                  title={<span><SoundOutlined /> 音频输出</span>}
-                  size="small"
-                  style={{ marginBottom: 16 }}
-                >
-                  <AudioPlayer
-                    src={result.audioUrl}
-                    layout="horizontal-reverse"
-                    showJumpControls={false}
-                    customVolumeControls={[]}
-                    customAdditionalControls={[]}
-                  />
-                </Card>
-              )}
-
               {/* 执行详情（时间线） */}
               <Card
                 title={<span><ClockCircleOutlined /> 执行详情</span>}
@@ -885,6 +821,70 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
                   ]}
                 />
               </Card>
+
+              {/* 文本输出 */}
+              {result.output && (
+                <Card
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span><FileTextOutlined /> 文本输出</span>
+                      <Space>
+                        <Tag style={{ fontSize: 11 }}>{result.output.length} 字符</Tag>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(result.output || '');
+                            message.success('已复制到剪贴板');
+                          }}
+                        >
+                          复制
+                        </Button>
+                      </Space>
+                    </div>
+                  }
+                  size="small"
+                  style={{ marginBottom: 16 }}
+                >
+                  <div
+                    style={{
+                      padding: 12,
+                      background: '#f6ffed',
+                      borderRadius: 6,
+                      maxHeight: 200,
+                      overflow: 'auto',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {result.output}
+                    </Text>
+                  </div>
+                </Card>
+              )}
+
+              {/* 音频输出 */}
+              {result.audioUrl && (
+                <Card
+                  title={<span><SoundOutlined /> 音频输出</span>}
+                  size="small"
+                  style={{ marginBottom: 16 }}
+                >
+                  <AudioPlayer
+                    src={result.audioUrl}
+                    layout="horizontal-reverse"
+                    showJumpControls={false}
+                    customVolumeControls={[]}
+                    customAdditionalControls={[]}
+                  />
+                </Card>
+              )}
 
               <Divider />
 
