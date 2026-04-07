@@ -38,9 +38,16 @@ public class WorkflowExecutor {
      * @param nodesJson 节点定义
      * @param edgesJson 边定义
      * @param input 用户输入
+     * @param suspendOnNodeTypes 暂停节点类型列表
+     * @param suspendOnNodeIds 暂停节点ID列表
+     * @param resumeFromNodeId 从哪个节点之后开始执行（用于恢复）
+     * @param initialVariables 初始变量（用于恢复时传递已完成的变量）
      * @param emitter SSE emitter，用于推送事件
      */
-    public void executeWithEvents(String nodesJson, String edgesJson, String input, SseEmitter emitter) {
+    public void executeWithEvents(String nodesJson, String edgesJson, String input,
+                                   List<String> suspendOnNodeTypes, List<String> suspendOnNodeIds,
+                                   String resumeFromNodeId, Map<String, Object> initialVariables,
+                                   SseEmitter emitter) {
         long workflowStartTime = System.currentTimeMillis();
         try {
             List<Map<String, Object>> nodes = parseNodes(nodesJson);
@@ -60,16 +67,39 @@ public class WorkflowExecutor {
             // 初始化执行上下文
             ExecutionContext context = ExecutionContext.builder()
                     .input(input)
-                    .variables(new HashMap<>())
+                    .variables(initialVariables != null ? initialVariables : new HashMap<>())
                     .logs(new ArrayList<>())
                     .build();
+
+            // 如果是恢复执行，设置lastOutput
+            if (initialVariables != null && initialVariables.containsKey("lastOutput")) {
+                context.setVariable("lastOutput", initialVariables.get("lastOutput"));
+            }
 
             Map<String, NodeExecutionResult> results = new HashMap<>();
             int totalInputTokens = 0;
             int totalOutputTokens = 0;
 
+            // 确定开始执行的节点索引
+            int startIndex = 0;
+            if (resumeFromNodeId != null && !resumeFromNodeId.isEmpty()) {
+                // 找到暂停节点的索引，从下一个节点开始执行
+                int resumeIndex = sortedNodes.indexOf(resumeFromNodeId);
+                if (resumeIndex >= 0 && resumeIndex < sortedNodes.size() - 1) {
+                    startIndex = resumeIndex + 1;
+                } else if (resumeIndex >= 0) {
+                    // 暂停节点是最后一个节点，无需继续执行
+                    sendEvent(emitter, ExecutionEvent.workflowComplete(
+                            context.getStringVariable("lastOutput"),
+                            null,
+                            0L, 0, 0, 0
+                    ));
+                    return;
+                }
+            }
+
             // 执行每个节点
-            for (int i = 0; i < sortedNodes.size(); i++) {
+            for (int i = startIndex; i < sortedNodes.size(); i++) {
                 String nodeId = sortedNodes.get(i);
                 Map<String, Object> node = findNodeById(nodes, nodeId);
                 if (node == null) {
@@ -125,6 +155,29 @@ public class WorkflowExecutor {
 
                 totalInputTokens += result.getInputTokens();
                 totalOutputTokens += result.getOutputTokens();
+
+                // 检查是否需要暂停
+                boolean shouldSuspend = shouldSuspend(nodeId, nodeType, suspendOnNodeTypes, suspendOnNodeIds);
+                if (shouldSuspend) {
+                    context.addLog("节点 " + nodeLabel + " 执行完成，按配置暂停等待用户干预");
+
+                    // 推送暂停事件
+                    sendEvent(emitter, ExecutionEvent.builder()
+                            .eventType("workflow_suspended")
+                            .nodeId(nodeId)
+                            .nodeType(nodeType)
+                            .nodeLabel(nodeLabel)
+                            .status("suspended")
+                            .output(result.getOutput())
+                            .inputTokens(totalInputTokens)
+                            .outputTokens(totalOutputTokens)
+                            .totalTokens(totalInputTokens + totalOutputTokens)
+                            .timestamp(System.currentTimeMillis())
+                            .build());
+
+                    // 暂停状态下结束执行
+                    return;
+                }
             }
 
             long totalDuration = System.currentTimeMillis() - workflowStartTime;

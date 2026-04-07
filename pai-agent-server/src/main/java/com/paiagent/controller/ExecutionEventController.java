@@ -81,8 +81,13 @@ public class ExecutionEventController {
                             : "[]";
                 }
 
-                // 执行工作流，推送事件
-                workflowExecutor.executeWithEvents(nodesJson, edgesJson, request.getInput(), emitter);
+                // 执行工作流，推送事件（传递暂停配置和恢复参数）
+                workflowExecutor.executeWithEvents(
+                        nodesJson, edgesJson, request.getInput(),
+                        request.getSuspendOnNodeTypes(), request.getSuspendOnNodeIds(),
+                        request.getResumeFromNodeId(), request.getInitialVariables(),
+                        emitter
+                );
 
                 // 完成 SSE 连接
                 emitter.complete();

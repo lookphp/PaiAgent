@@ -153,6 +153,7 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
         nodes: JSON.stringify(nodes),
         edges: JSON.stringify(edges),
       },
+      suspendOnNodeTypes: suspendConfig.length > 0 ? suspendConfig : undefined,
     };
 
     const closeConnection = workflowApi.executeStream(
@@ -181,8 +182,34 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
             totalTokens: totalTokens,
           }]);
           setProgress((prev) => Math.min(90, prev + 20));
+        } else if (eventType === 'workflow_suspended' && nodeId) {
+          // 工作流暂停（SSE 模式）
+          setIsRunning(false);
+          setCurrentStep('suspended');
+          setSuspendedData({
+            executionId: 0, // SSE 模式下没有真正的 executionId
+            nodeId: nodeId,
+            nodeType: nodeType || '',
+            output: output || '',
+          });
+          setEditedOutput(output || '');
+          // 记录暂停节点的日志
+          setLogs((prev) => [...prev, {
+            id: `log-${nodeId}-${Date.now()}`,
+            message: `${nodeLabel} 执行完成（已暂停）`,
+            timestamp: new Date().toLocaleTimeString(),
+            status: 'suspended',
+            nodeType: nodeType,
+            nodeLabel: nodeLabel,
+            durationMs: durationMs,
+            output: output,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            totalTokens: totalTokens,
+          }]);
         } else if (eventType === 'workflow_complete') {
           // 工作流完成
+          console.log('[WorkflowModal] workflow_complete event:', { finalOutput, audioUrl, totalDuration });
           setProgress(100);
           setIsRunning(false);
           setCurrentStep('result');
@@ -227,6 +254,120 @@ const RunWorkflowModal: React.FC<RunWorkflowModalProps> = ({ open, onClose }) =>
   const handleResume = async () => {
     if (!suspendedData || !editedOutput.trim() || isRunning) return;
 
+    // SSE 模式：executionId 为 0，从暂停节点之后继续执行
+    if (suspendedData.executionId === 0) {
+      setIsRunning(true);
+      setCurrentStep('running');
+      setProgress(50);
+      clearAllNodeExecutionStatus();
+
+      const request = {
+        workflowId: currentWorkflow?.id ? Number(currentWorkflow.id) : 0,
+        input: editedOutput,
+        parameters: currentWorkflow?.id ? undefined : {
+          nodes: JSON.stringify(nodes),
+          edges: JSON.stringify(edges),
+        },
+        suspendOnNodeTypes: suspendConfig.length > 0 ? suspendConfig : undefined,
+        // 从暂停节点之后继续执行
+        resumeFromNodeId: suspendedData.nodeId,
+        // 传递修改后的输出作为 lastOutput
+        initialVariables: {
+          lastOutput: editedOutput,
+          [`node_output_${suspendedData.nodeId}`]: editedOutput,
+        },
+      };
+
+      const closeConnection = workflowApi.executeStream(
+        request,
+        (event: ExecutionEvent) => {
+          // 事件处理逻辑同 handleRun
+          const { eventType, nodeId, nodeType, nodeLabel, status, output, durationMs, inputTokens, outputTokens, totalTokens, error, finalOutput, audioUrl, totalDuration } = event;
+
+          if (eventType === 'node_start' && nodeId) {
+            setNodeExecutionStatus(nodeId, 'running');
+            setProgress((prev) => Math.min(90, prev + 15));
+          } else if (eventType === 'node_complete' && nodeId) {
+            setNodeExecutionStatus(nodeId, 'completed');
+            setLogs((prev) => [...prev, {
+              id: `log-${nodeId}-${Date.now()}`,
+              message: `${nodeLabel} 执行完成`,
+              timestamp: new Date().toLocaleTimeString(),
+              status: 'success',
+              nodeType: nodeType,
+              nodeLabel: nodeLabel,
+              durationMs: durationMs,
+              output: output,
+              inputTokens: inputTokens,
+              outputTokens: outputTokens,
+              totalTokens: totalTokens,
+            }]);
+            setProgress((prev) => Math.min(90, prev + 20));
+          } else if (eventType === 'workflow_suspended' && nodeId) {
+            setIsRunning(false);
+            setCurrentStep('suspended');
+            setSuspendedData({
+              executionId: 0,
+              nodeId: nodeId,
+              nodeType: nodeType || '',
+              output: output || '',
+            });
+            setEditedOutput(output || '');
+            setLogs((prev) => [...prev, {
+              id: `log-${nodeId}-${Date.now()}`,
+              message: `${nodeLabel} 执行完成（已暂停）`,
+              timestamp: new Date().toLocaleTimeString(),
+              status: 'suspended',
+              nodeType: nodeType,
+              nodeLabel: nodeLabel,
+              durationMs: durationMs,
+              output: output,
+              inputTokens: inputTokens,
+              outputTokens: outputTokens,
+              totalTokens: totalTokens,
+            }]);
+          } else if (eventType === 'workflow_complete') {
+            setProgress(100);
+            setIsRunning(false);
+            setCurrentStep('result');
+            setResult({
+              success: true,
+              output: finalOutput,
+              audioUrl: audioUrl,
+              totalDuration: totalDuration,
+              totalTokens: totalTokens,
+              totalInputTokens: inputTokens,
+              totalOutputTokens: outputTokens,
+            });
+          } else if (eventType === 'workflow_error') {
+            setProgress(100);
+            setIsRunning(false);
+            setCurrentStep('result');
+            if (nodeId) {
+              setNodeExecutionStatus(nodeId, 'error');
+            }
+            setResult({
+              success: false,
+              error: error,
+            });
+          }
+        },
+        (error: Error) => {
+          setProgress(100);
+          setIsRunning(false);
+          setCurrentStep('result');
+          setResult({
+            success: false,
+            error: error.message || '执行失败',
+          });
+        }
+      );
+
+      setCloseSSE(() => closeConnection);
+      return;
+    }
+
+    // 传统模式：使用 resumeExecution API
     setIsRunning(true);
     setCurrentStep('running');
 

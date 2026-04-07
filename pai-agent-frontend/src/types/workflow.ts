@@ -37,6 +37,10 @@ export interface ExecutionRequest {
   suspendOnNodeTypes?: string[];
   /** 在哪些节点ID后暂停 */
   suspendOnNodeIds?: string[];
+  /** 从哪个节点开始执行（用于恢复） */
+  resumeFromNodeId?: string;
+  /** 初始变量（用于恢复时传递已完成的变量） */
+  initialVariables?: Record<string, any>;
 }
 
 // 执行响应接口

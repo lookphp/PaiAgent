@@ -26,4 +26,14 @@ public class ExecutionRequest {
      * 在哪些节点ID后暂停
      */
     private List<String> suspendOnNodeIds;
+
+    /**
+     * 从哪个节点开始执行（用于恢复执行）
+     */
+    private String resumeFromNodeId;
+
+    /**
+     * 初始变量（用于恢复执行时传递已完成的变量）
+     */
+    private Map<String, Object> initialVariables;
 }

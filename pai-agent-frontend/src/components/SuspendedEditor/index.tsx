@@ -6,15 +6,16 @@ import {
   Tag,
   Space,
   Alert,
+  message,
 } from 'antd';
 import {
   PlayCircleOutlined,
   CloseOutlined,
   EditOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useWorkflowStore } from '../../stores/workflowStore';
 import { workflowApi } from '../../services/workflowApi';
+import type { ExecutionEvent } from '../../types/workflow';
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -27,15 +28,68 @@ const SuspendedEditor: React.FC<SuspendedEditorProps> = () => {
     suspendedData,
     editedOutput,
     isExecuting,
+    currentWorkflow,
+    nodes,
+    edges,
+    suspendConfig,
     setEditedOutput,
     setExecutionStatus,
     setExecutionResult,
     setIsExecuting,
     addExecutionLog,
     resetExecution,
+    clearAllNodeExecutionStatus,
+    handleExecutionEvent,
+    setCloseSSEConnection,
   } = useWorkflowStore();
 
-  const handleResume = async () => {
+  // SSE 模式：没有 executionSessionId，使用重新执行的方式
+  const isSSEMode = !executionSessionId;
+
+  const handleResumeSSE = async () => {
+    if (!editedOutput.trim() || isExecuting || !suspendedData) return;
+
+    // SSE 模式下，使用修改后的输出作为 lastOutput，从暂停节点的下一个节点继续执行
+    setIsExecuting(true);
+    setExecutionStatus('running');
+    clearAllNodeExecutionStatus();
+    addExecutionLog({ message: '继续执行后续节点...', type: 'system' });
+
+    const request = {
+      workflowId: currentWorkflow?.id ? Number(currentWorkflow.id) : 0,
+      input: editedOutput,
+      parameters: currentWorkflow?.id ? undefined : {
+        nodes: JSON.stringify(nodes),
+        edges: JSON.stringify(edges),
+      },
+      suspendOnNodeTypes: suspendConfig.nodeTypes?.length > 0 ? suspendConfig.nodeTypes : undefined,
+      // 从暂停节点之后继续执行
+      resumeFromNodeId: suspendedData.nodeId,
+      // 传递修改后的输出作为 lastOutput
+      initialVariables: {
+        lastOutput: editedOutput,
+        [`node_output_${suspendedData.nodeId}`]: editedOutput,
+      },
+    };
+
+    const closeConnection = workflowApi.executeStream(
+      request,
+      (event: ExecutionEvent) => {
+        handleExecutionEvent(event);
+      },
+      (error: Error) => {
+        setExecutionStatus('error');
+        setIsExecuting(false);
+        addExecutionLog({ message: `错误: ${error.message}`, type: 'error' });
+        setExecutionResult({ success: false, error: error.message });
+      }
+    );
+
+    setCloseSSEConnection(() => closeConnection);
+  };
+
+  // 传统模式：使用 resumeExecution API
+  const handleResumeTraditional = async () => {
     if (!executionSessionId || !editedOutput.trim()) return;
 
     setIsExecuting(true);
@@ -102,15 +156,22 @@ const SuspendedEditor: React.FC<SuspendedEditorProps> = () => {
     }
   };
 
-  const handleCancel = async () => {
-    if (!executionSessionId) return;
+  const handleResume = isSSEMode ? handleResumeSSE : handleResumeTraditional;
 
-    try {
-      await workflowApi.cancelExecution(executionSessionId);
+  const handleCancel = async () => {
+    if (isSSEMode) {
+      // SSE 模式：直接取消并重置
       addExecutionLog({ message: '已取消执行', type: 'system' });
       resetExecution();
-    } catch (error: any) {
-      addExecutionLog({ message: `取消失败: ${error.message}`, type: 'error' });
+    } else if (executionSessionId) {
+      // 传统模式：调用取消 API
+      try {
+        await workflowApi.cancelExecution(executionSessionId);
+        addExecutionLog({ message: '已取消执行', type: 'system' });
+        resetExecution();
+      } catch (error: any) {
+        addExecutionLog({ message: `取消失败: ${error.message}`, type: 'error' });
+      }
     }
   };
 
@@ -158,7 +219,7 @@ const SuspendedEditor: React.FC<SuspendedEditorProps> = () => {
         </Button>
         <Button
           type="primary"
-          icon={isExecuting ? <></> : <PlayCircleOutlined />}
+          icon={<PlayCircleOutlined />}
           onClick={handleResume}
           disabled={!editedOutput.trim() || isExecuting}
           loading={isExecuting}

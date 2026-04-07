@@ -86,6 +86,7 @@ const DebugDrawer: React.FC<DebugDrawerProps> = () => {
         nodes: JSON.stringify(nodes),
         edges: JSON.stringify(edges),
       },
+      suspendOnNodeTypes: suspendConfig.nodeTypes?.length > 0 ? suspendConfig.nodeTypes : undefined,
     };
 
     // 使用 SSE 实时执行

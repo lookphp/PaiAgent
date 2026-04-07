@@ -307,6 +307,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       });
     } else if (eventType === 'workflow_complete') {
       // 工作流完成
+      console.log('[WorkflowStore] workflow_complete:', { finalOutput, audioUrl, totalDuration });
       set({
         executionStatus: 'completed',
         isExecuting: false,
@@ -330,6 +331,30 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         executionResult: { success: false, error: error },
       });
       get().addExecutionLog({ message: `执行失败: ${error}`, type: 'error' });
+    } else if (eventType === 'workflow_suspended') {
+      // 工作流暂停（SSE 模式，没有 executionSessionId）
+      set({
+        executionStatus: 'suspended',
+        isExecuting: false,
+        suspendedData: {
+          nodeId: nodeId!,
+          nodeType: nodeType!,
+          output: output || '',
+        },
+        editedOutput: output || '', // 设置编辑内容为当前输出
+        // SSE 模式下不设置 executionSessionId
+      });
+      get().addExecutionLog({
+        message: `${nodeLabel} 执行完成，已暂停`,
+        nodeType: nodeType!,
+        nodeId: nodeId!,
+        nodeLabel: nodeLabel!,
+        output: output,
+        type: 'suspended',
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        totalTokens: totalTokens,
+      });
     }
   },
 

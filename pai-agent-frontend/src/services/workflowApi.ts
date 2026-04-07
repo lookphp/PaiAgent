@@ -108,6 +108,10 @@ export const workflowApi = {
     const body: any = {
       workflowId: request.workflowId || 0,
       input: request.input,
+      suspendOnNodeTypes: request.suspendOnNodeTypes,
+      suspendOnNodeIds: request.suspendOnNodeIds,
+      resumeFromNodeId: request.resumeFromNodeId,
+      initialVariables: request.initialVariables,
     };
 
     // 如果没有 workflowId，使用 parameters 中的 nodes 和 edges
@@ -140,23 +144,55 @@ export const workflowApi = {
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log('[SSE] Stream done');
+            break;
+          }
 
           buffer += decoder.decode(value, { stream: true });
+          console.log('[SSE] Received buffer:', buffer.length, 'bytes');
 
-          // 解析 SSE 事件
+          // 解析 SSE 事件 - 按双换行符分割完整事件
+          const events = buffer.split('\n\n');
+          // 保留最后一个可能不完整的事件
+          buffer = events.pop() || '';
+
+          for (const eventStr of events) {
+            if (eventStr.trim()) {
+              // 解析事件内容
+              const lines = eventStr.split('\n');
+              for (const line of lines) {
+                if (line.startsWith('data:')) {
+                  const data = line.slice(5).trim();
+                  if (data) {
+                    try {
+                      const event: ExecutionEvent = JSON.parse(data);
+                      console.log('[SSE] Parsed event:', event.eventType);
+                      onEvent(event);
+                    } catch (e) {
+                      console.error('[SSE] Failed to parse:', data, e);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // 处理剩余的 buffer
+        if (buffer.trim()) {
+          console.log('[SSE] Processing remaining buffer');
           const lines = buffer.split('\n');
-          buffer = '';
-
           for (const line of lines) {
             if (line.startsWith('data:')) {
               const data = line.slice(5).trim();
               if (data) {
                 try {
                   const event: ExecutionEvent = JSON.parse(data);
+                  console.log('[SSE] Parsed event (final):', event.eventType);
                   onEvent(event);
                 } catch (e) {
-                  console.error('Failed to parse SSE event:', data, e);
+                  console.error('[SSE] Failed to parse:', data, e);
                 }
               }
             }
